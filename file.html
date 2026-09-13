@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Skeletal Joint System &amp; The Hand &amp; Finger Joint System — Combined</title>
+<style>
+  :root{
+    --bg: #0F1B2D;
+    --panel: #13233C;
+    --ink: #CFE8F2;
+    --ink-dim: #90AAC0;
+    --amber: #F2A65A;
+    --rule: #2A3D57;
+    --rule-soft: rgba(207,232,242,0.08);
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink-dim);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page{
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 28px 80px;
+  }
+
+  /* ---------- Header / title block ---------- */
+  header{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 32px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 28px;
+    margin-bottom: 24px;
+  }
+
+  h1{
+    color: var(--ink);
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+    max-width: 460px;
+  }
+
+  header p{
+    margin:0;
+    max-width: 420px;
+    font-size: 0.98rem;
+  }
+
+  .titleblock{
+    border: 1px solid var(--rule);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    min-width: 220px;
+  }
+  .titleblock div{
+    display:flex;
+    border-bottom: 1px solid var(--rule);
+  }
+  .titleblock div:last-child{ border-bottom:none; }
+  .titleblock span{
+    padding: 6px 10px;
+  }
+  .titleblock span:first-child{
+    width: 90px;
+    color: var(--ink-dim);
+    border-right: 1px solid var(--rule);
+    opacity: 0.75;
+  }
+  .titleblock span:last-child{
+    color: var(--ink);
+  }
+
+  /* ---------- Legend ---------- */
+  .legend{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    padding: 16px 0 32px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    color: var(--ink-dim);
+  }
+  .legend-item{ display:flex; align-items:center; gap:8px; }
+  .legend-item svg{ display:block; }
+
+  .intro{
+    max-width: 640px;
+    margin: 0 0 8px;
+    font-size: 1rem;
+  }
+
+  /* ---------- Region blocks ---------- */
+  .region{
+    display:flex;
+    gap: 36px;
+    padding: 40px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: flex-start;
+  }
+  .region:last-of-type{ border-bottom: none; }
+  .region--reverse{ flex-direction: row-reverse; }
+
+  .diagram-wrap{
+    flex: 0 0 300px;
+  }
+
+  .diagram-frame{
+    position: relative;
+    background:
+      linear-gradient(var(--rule-soft) 1px, transparent 1px) 0 0/20px 20px,
+      linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px) 0 0/20px 20px,
+      var(--panel);
+    border: 1px solid var(--rule);
+    padding: 6px;
+  }
+  .diagram-frame::before,
+  .diagram-frame::after,
+  .diagram-frame > .tick-br,
+  .diagram-frame > .tick-bl{
+    content:"";
+    position:absolute;
+    width:10px; height:10px;
+    border-color: var(--ink-dim);
+    opacity:0.6;
+  }
+  .diagram-frame::before{ /* top-left */
+    top:-1px; left:-1px;
+    border-top:2px solid var(--ink-dim);
+    border-left:2px solid var(--ink-dim);
+  }
+  .diagram-frame::after{ /* top-right */
+    top:-1px; right:-1px;
+    border-top:2px solid var(--ink-dim);
+    border-right:2px solid var(--ink-dim);
+  }
+  .tick-bl{
+    bottom:-1px; left:-1px;
+    border-bottom:2px solid var(--ink-dim);
+    border-left:2px solid var(--ink-dim);
+  }
+  .tick-br{
+    bottom:-1px; right:-1px;
+    border-bottom:2px solid var(--ink-dim);
+    border-right:2px solid var(--ink-dim);
+  }
+
+  .diagram-svg{ width:100%; height:auto; display:block; }
+
+  .fig-caption{
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    color: var(--ink-dim);
+    margin-top: 10px;
+    opacity: 0.85;
+  }
+
+  /* svg element styling */
+  .bone{ stroke: var(--ink); stroke-width: 8; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+  .bone-ghost{ stroke: var(--ink-dim); stroke-width: 6; fill:none; stroke-linecap:round; stroke-dasharray: 2 6; opacity:0.65; }
+  .mass{ stroke: var(--ink); stroke-width: 2.5; fill: rgba(207,232,242,0.08); }
+  .disc{ fill: var(--amber); opacity:0.35; stroke:none; }
+  .pivot{ fill: var(--amber); stroke:none; }
+  .rom{ stroke: var(--amber); stroke-width: 2.25; fill:none; stroke-dasharray: 5 4; }
+  .svglabel{ font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 10.5px; letter-spacing:0.04em; fill: var(--ink-dim); }
+
+  .region-text h2{
+    color: var(--ink);
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+  .region-text p{
+    margin: 0 0 12px;
+    max-width: 60ch;
+  }
+  .region-text p:last-of-type{ margin-bottom: 16px; }
+
+  .tag-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .tag{
+    border: 1px solid var(--rule);
+    color: var(--ink-dim);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    padding: 4px 8px;
+  }
+
+  footer{
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    max-width: 640px;
+  }
+
+  @media (max-width: 760px){
+    .region, .region--reverse{ flex-direction: column; }
+    .diagram-wrap{ flex: 0 0 auto; width: 100%; }
+    header{ align-items: flex-start; }
+  }
+
+
+  .doc-divider{
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 34px 28px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    page-break-before: always;
+    break-before: page;
+  }
+  .doc-divider .line{
+    flex:1;
+    height:0;
+    border-top: 2px solid var(--amber);
+    opacity:0.7;
+  }
+  .doc-divider .label{
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--amber);
+    white-space: nowrap;
+  }
+  .page + .page{
+    border-top: 1px solid var(--rule);
+  }
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- hidden defs shared by all diagrams -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"></path>
+      </marker>
+    </defs>
+  </svg>
+
+  <header>
+    <div>
+      <h1>The Skeletal Joint System</h1>
+      <p>A region-by-region walk through the body, showing where the major joints sit and how each one lets you move.</p>
+    </div>
+    <div class="titleblock">
+      <div><span>SUBJECT</span><span>Human joints</span></div>
+      <div><span>SCALE</span><span>Not to scale</span></div>
+      <div><span>SHEET</span><span>1 of 2</span></div>
+      <div><span>REV</span><span>A</span></div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend-item">
+      <svg width="26" height="14"><line x1="2" y1="7" x2="24" y2="7" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"></line></svg>
+      <span>Bone</span>
+    </div>
+    <div class="legend-item">
+      <svg width="26" height="14"><path d="M2,12 Q13,2 24,12" stroke="var(--amber)" stroke-width="2" fill="none" stroke-dasharray="4 3"></path></svg>
+      <span>Range of motion</span>
+    </div>
+    <div class="legend-item">
+      <svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--amber)"></circle></svg>
+      <span>Pivot point</span>
+    </div>
+    <div class="legend-item">
+      <svg width="20" height="14"><ellipse cx="10" cy="7" rx="9" ry="4" fill="var(--amber)" opacity="0.35"></ellipse></svg>
+      <span>Cartilage / disc</span>
+    </div>
+  </div>
+
+  <p class="intro">Every joint is a trade-off between how much it moves and how stable it stays. The nine regions below show that trade-off in action — from the skull's rigid, immovable seams to the shoulder's almost unlimited swing.</p>
+
+  <!-- 1. HEAD & JAW -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <ellipse class="mass" cx="122" cy="82" rx="54" ry="58"></ellipse>
+          <path class="bone" d="M172,110 Q152,152 96,148"></path>
+          <circle class="pivot" cx="176" cy="108" r="4"></circle>
+          <path class="rom" d="M176,108 Q168,140 142,150" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="186" y="105">TMJ</text>
+          <text class="svglabel" x="186" y="120">hinge + glide</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 1 — HEAD &amp; JAW</div>
+    </div>
+    <div class="region-text">
+      <h2>Head &amp; Jaw</h2>
+      <p>The skull itself is mostly joint-free by design: its plates are locked together at sutures, fibrous seams that fuse over childhood so the brain has a rigid case. The one skull joint that moves freely is the <strong>temporomandibular joint (TMJ)</strong>, just in front of each ear, where the lower jaw hangs from the skull.</p>
+      <p>The TMJ combines a hinge motion (opening and closing) with a small forward glide, which is why the jaw can drop straight down and also slide slightly forward to widen the bite — useful for chewing and speech.</p>
+      <div class="tag-row"><span class="tag">SUTURE — FIXED</span><span class="tag">TMJ — HINGE+GLIDE</span></div>
+    </div>
+  </section>
+
+  <!-- 2. NECK -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <ellipse class="mass" cx="150" cy="26" rx="26" ry="17"></ellipse>
+          <path class="rom" d="M124,20 Q150,2 176,20" marker-end="url(#arrow)"></path>
+          <circle class="pivot" cx="150" cy="45" r="4"></circle>
+          <rect class="mass" x="128" y="52" width="44" height="15" rx="4"></rect>
+          <path class="rom" d="M132,74 Q150,58 168,74" marker-end="url(#arrow)"></path>
+          <circle class="pivot" cx="150" cy="70" r="4"></circle>
+          <rect class="mass" x="124" y="76" width="52" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="150" cy="96" rx="24" ry="3.5"></ellipse>
+          <rect class="mass" x="120" y="100" width="60" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="150" cy="120" rx="28" ry="3.5"></ellipse>
+          <rect class="mass" x="116" y="124" width="68" height="15" rx="4"></rect>
+          <text class="svglabel" x="184" y="26">occiput–C1</text>
+          <text class="svglabel" x="184" y="72">C1–C2 pivot</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 2 — NECK</div>
+    </div>
+    <div class="region-text">
+      <h2>Neck</h2>
+      <p>The neck is where the spine gets its most specialized joints. The very top joint, between the skull and the first vertebra (the atlas), lets you nod "yes." Just below it, the joint between the first and second vertebrae (the atlas and axis) is a pivot joint — a bony ring rotating around a peg — and it's responsible for almost all of the "no" head-turn.</p>
+      <p>Lower down, the remaining cervical vertebrae stack on fibrocartilage discs and glide against each other at small facet joints, adding the rest of the neck's tilt and rotation in smaller increments.</p>
+      <div class="tag-row"><span class="tag">OCCIPUT–C1 — CONDYLOID</span><span class="tag">C1–C2 — PIVOT</span><span class="tag">DISCS — SYMPHYSIS</span></div>
+    </div>
+  </section>
+
+  <!-- 3. SHOULDER -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M118,45 Q78,108 118,168"></path>
+          <circle class="mass" cx="162" cy="108" r="38"></circle>
+          <path class="rom" d="M198,80 A58,58 0 1 1 160,50" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="168" y="34">glenohumeral</text>
+          <text class="svglabel" x="168" y="48">ball-and-socket</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 3 — SHOULDER</div>
+    </div>
+    <div class="region-text">
+      <h2>Shoulder</h2>
+      <p>The shoulder is the most mobile joint in the body, and the diagram shows why: the socket on the shoulder blade is shallow, more like a saucer than a cup, so the ball at the top of the arm bone is barely held in place by bone alone.</p>
+      <p>That shallow fit is what lets you swing your arm through nearly a full circle — overhead, behind you, across your chest. The trade-off is stability: the shoulder relies heavily on surrounding muscles and ligaments to stay in place, and it's the joint most prone to dislocation.</p>
+      <div class="tag-row"><span class="tag">BALL-AND-SOCKET</span><span class="tag">SHALLOW SOCKET</span></div>
+    </div>
+  </section>
+
+  <!-- 4. ELBOW -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,18 L150,100"></path>
+          <path class="bone" d="M150,100 L150,182"></path>
+          <path class="bone-ghost" d="M150,100 L98,132"></path>
+          <circle class="pivot" cx="150" cy="100" r="5"></circle>
+          <path class="rom" d="M150,142 Q118,124 104,102" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="160" y="98">humeroulnar</text>
+          <text class="svglabel" x="160" y="112">hinge</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 4 — ELBOW</div>
+    </div>
+    <div class="region-text">
+      <h2>Elbow</h2>
+      <p>The elbow is a straightforward hinge: the end of the upper-arm bone fits into a notch on the forearm bone, and the two move in a single plane, like a door on a pin. The dashed "ghost" position in the diagram shows how far that swing carries the forearm.</p>
+      <p>A second joint at the same location — between the two forearm bones — lets the forearm twist independently, which is what turns your palm up or down without involving the elbow's hinge at all.</p>
+      <div class="tag-row"><span class="tag">HUMEROULNAR — HINGE</span><span class="tag">RADIOULNAR — PIVOT</span></div>
+    </div>
+  </section>
+
+  <!-- 5. WRIST & HAND -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M52,176 L100,120"></path>
+          <ellipse class="mass" cx="112" cy="108" rx="15" ry="11"></ellipse>
+          <path class="bone" d="M124,100 L162,78"></path>
+          <circle class="pivot" cx="162" cy="78" r="4"></circle>
+          <path class="bone" d="M162,78 L196,64"></path>
+          <path class="bone-ghost" d="M162,78 L188,96"></path>
+          <path class="rom" d="M178,68 Q188,82 186,94" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="60" y="150">radiocarpal</text>
+          <text class="svglabel" x="60" y="164">condyloid</text>
+          <text class="svglabel" x="196" y="90">knuckle</text>
+          <text class="svglabel" x="196" y="104">hinge</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 5 — WRIST &amp; HAND</div>
+    </div>
+    <div class="region-text">
+      <h2>Wrist &amp; Hand</h2>
+      <p>The wrist joint itself is a condyloid joint — an oval bone-end rocking inside a shallow oval socket — which allows up-down and side-to-side motion but not rotation. Between the small wrist bones themselves are several tiny plane joints that glide slightly, giving the wrist its overall flexibility.</p>
+      <p>Out in the hand, the knuckles (where fingers meet the palm) are condyloid joints too, while the finger joints beyond them are simple hinges. The one exception is the base of the thumb, a saddle joint, which is what lets the thumb swing across the palm to touch the fingertips.</p>
+      <div class="tag-row"><span class="tag">WRIST — CONDYLOID</span><span class="tag">KNUCKLES — CONDYLOID</span><span class="tag">FINGERS — HINGE</span><span class="tag">THUMB BASE — SADDLE</span></div>
+    </div>
+  </section>
+
+  <!-- 6. BACK / SPINE -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <rect class="mass" x="142" y="14" width="38" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="161" cy="34" rx="20" ry="3.5"></ellipse>
+          <rect class="mass" x="138" y="38" width="42" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="159" cy="58" rx="22" ry="3.5"></ellipse>
+          <rect class="mass" x="132" y="62" width="46" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="155" cy="82" rx="24" ry="3.5"></ellipse>
+          <rect class="mass" x="124" y="86" width="50" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="149" cy="106" rx="26" ry="3.5"></ellipse>
+          <rect class="mass" x="114" y="110" width="54" height="15" rx="4"></rect>
+          <ellipse class="disc" cx="141" cy="130" rx="28" ry="3.5"></ellipse>
+          <rect class="mass" x="102" y="134" width="58" height="16" rx="4"></rect>
+          <path class="rom" d="M188,50 Q216,100 176,158" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="196" y="44">discs —</text>
+          <text class="svglabel" x="196" y="58">symphysis</text>
+          <text class="svglabel" x="196" y="168">facet joints —</text>
+          <text class="svglabel" x="196" y="182">glide</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 6 — BACK / SPINE</div>
+    </div>
+    <div class="region-text">
+      <h2>Back &amp; Spine</h2>
+      <p>No single joint gives the back its flexibility — the spine bends by adding up dozens of small movements. Between each pair of vertebrae sits a fibrocartilage disc, a symphysis joint that compresses slightly and lets the vertebrae tilt a few degrees relative to each other.</p>
+      <p>Behind those discs, small facet joints (plane joints) at the back of each vertebra glide against their neighbors, guiding the direction of movement and limiting rotation at any single level. Stack enough of these small movements together and you get the spine's full range: bending forward, arching back, and twisting side to side.</p>
+      <div class="tag-row"><span class="tag">DISCS — SYMPHYSIS</span><span class="tag">FACET JOINTS — PLANE</span></div>
+    </div>
+  </section>
+
+  <!-- 7. HIP -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M118,32 Q64,108 118,184"></path>
+          <circle class="mass" cx="158" cy="108" r="34"></circle>
+          <path class="rom" d="M190,82 A46,46 0 0 1 158,62" marker-end="url(#arrow)"></path>
+          <path class="rom" d="M188,138 A46,46 0 0 0 158,158" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="166" y="42">coxofemoral</text>
+          <text class="svglabel" x="166" y="56">ball-and-socket (deep)</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 7 — HIP</div>
+    </div>
+    <div class="region-text">
+      <h2>Hip</h2>
+      <p>The hip is built on the same ball-and-socket plan as the shoulder, but the socket here wraps much further around the ball — closer to a true cup than a saucer. Compare the depth of the curve in this diagram with the shoulder's shallower one in Fig. 3.</p>
+      <p>That extra bony coverage costs the hip some range of motion compared to the shoulder, but it makes the joint far more inherently stable. It's a large part of why hip dislocations are rare and usually require serious trauma, while shoulder dislocations are common.</p>
+      <div class="tag-row"><span class="tag">BALL-AND-SOCKET</span><span class="tag">DEEP, STABLE SOCKET</span></div>
+    </div>
+  </section>
+
+  <!-- 8. KNEE -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,16 L150,98"></path>
+          <path class="bone" d="M150,98 L150,184"></path>
+          <path class="bone-ghost" d="M150,98 L100,130"></path>
+          <ellipse class="disc" cx="150" cy="98" rx="18" ry="6"></ellipse>
+          <circle class="pivot" cx="150" cy="98" r="4"></circle>
+          <path class="rom" d="M150,140 Q116,122 104,100" marker-end="url(#arrow)"></path>
+          <path class="rom" d="M138,92 Q150,84 162,92" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="160" y="96">tibiofemoral</text>
+          <text class="svglabel" x="160" y="110">modified hinge</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 8 — KNEE</div>
+    </div>
+    <div class="region-text">
+      <h2>Knee</h2>
+      <p>The knee is the largest joint in the body, and mostly behaves like a hinge — bending and straightening in one main plane, shown by the long swing in the diagram. Two crescent-shaped cartilage pads, the menisci, sit between the thigh and shin bones to cushion that motion (the small shaded wedge at the joint line).</p>
+      <p>It isn't a pure hinge, though: once the knee is bent, the shin bone can rotate slightly inward and outward (the small curved arrow at the joint line), a detail that's stabilized by the knee's ligaments, including the cruciate ligaments crossing inside the joint itself.</p>
+      <div class="tag-row"><span class="tag">MODIFIED HINGE</span><span class="tag">MENISCI — CARTILAGE</span></div>
+    </div>
+  </section>
+
+  <!-- 9. ANKLE & FOOT -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M140,16 L140,108"></path>
+          <path class="bone" d="M140,108 L206,120"></path>
+          <path class="bone-ghost" d="M140,108 L188,86"></path>
+          <circle class="pivot" cx="140" cy="108" r="4.5"></circle>
+          <path class="rom" d="M160,98 Q178,104 190,116" marker-end="url(#arrow)"></path>
+          <circle class="pivot" cx="164" cy="128" r="3.5"></circle>
+          <path class="rom" d="M150,140 Q164,150 178,140" marker-end="url(#arrow)"></path>
+          <text class="svglabel" x="150" y="70">talocrural</text>
+          <text class="svglabel" x="150" y="84">hinge</text>
+          <text class="svglabel" x="150" y="158">subtalar</text>
+          <text class="svglabel" x="150" y="172">glide</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 9 — ANKLE &amp; FOOT</div>
+    </div>
+    <div class="region-text">
+      <h2>Ankle &amp; Foot</h2>
+      <p>The ankle's main joint, between the shin bones and the top of the foot, is a hinge — it's what lets you point your toes and pull your foot back up toward your shin, shown by the dashed alternate position in the diagram.</p>
+      <p>Just below that, a separate joint (the subtalar joint) and a row of small joints between the foot bones handle a different motion entirely: rolling the sole of the foot inward and outward. Splitting the work between these joints is what lets the foot both flex like a hinge and adapt to uneven ground.</p>
+      <div class="tag-row"><span class="tag">TALOCRURAL — HINGE</span><span class="tag">SUBTALAR — PLANE/GLIDE</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>These diagrams are simplified schematics, not anatomically exact drawings — they're meant to show each joint's shape and direction of movement at a glance. For fuller classification, terminology, and detail on joint anatomy, see the companion report, <em>How Bones Are Joined</em>.</p>
+  </footer>
+
+</div>
+
+
+
+
+<div class="doc-divider">
+  <span class="line"></span>
+  <span class="label">PART II — HAND &amp; FINGER JOINT SYSTEM (DETAIL SHEET)</span>
+  <span class="line"></span>
+</div>
+
+
+<div class="page">
+
+  <!-- hidden defs shared by all diagrams -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <header>
+    <div>
+      <h1>The Hand &amp; Finger Joint System</h1>
+      <p>A joint-by-joint walk through the wrist and hand, showing how each joint's shape trades mobility for stability to support grip and dexterity.</p>
+    </div>
+    <div class="titleblock">
+      <div><span>SUBJECT</span><span>Hand &amp; fingers</span></div>
+      <div><span>SCALE</span><span>Not to scale</span></div>
+      <div><span>SHEET</span><span>2 of 2</span></div>
+      <div><span>REV</span><span>A</span></div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend-item">
+      <svg width="26" height="14"><line x1="2" y1="7" x2="24" y2="7" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/></svg>
+      <span>Bone</span>
+    </div>
+    <div class="legend-item">
+      <svg width="26" height="14"><path d="M2,12 Q13,2 24,12" stroke="var(--amber)" stroke-width="2" fill="none" stroke-dasharray="4 3"/></svg>
+      <span>Range of motion</span>
+    </div>
+    <div class="legend-item">
+      <svg width="14" height="14"><circle cx="7" cy="7" r="4" fill="var(--amber)"/></svg>
+      <span>Pivot point</span>
+    </div>
+    <div class="legend-item">
+      <svg width="20" height="14"><ellipse cx="10" cy="7" rx="9" ry="4" fill="var(--amber)" opacity="0.35"/></svg>
+      <span>Cartilage / joint surface</span>
+    </div>
+  </div>
+
+  <p class="intro">The hand packs more joints into a small space than almost anywhere else in the body, and each one is tuned for a different job. The eight joints below move from the wrist's load-bearing sway down to the fingertip's simple one-way hinge, showing how that division of labor adds up to a hand that can both grip hard and thread a needle.</p>
+
+  <!-- 1. WRIST (RADIOCARPAL) -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,14 L150,84"/>
+          <ellipse class="mass" cx="150" cy="102" rx="30" ry="18"/>
+          <path class="bone" d="M150,120 L150,186"/>
+          <path class="bone-ghost" d="M150,120 L102,158"/>
+          <circle class="pivot" cx="150" cy="102" r="5"/>
+          <path class="rom" d="M150,150 Q116,140 104,114" marker-end="url(#arrow)"/>
+          <path class="rom" d="M126,88 Q150,76 174,88" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="188" y="98">radiocarpal</text>
+          <text class="svglabel" x="188" y="112">condyloid</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 1 — WRIST (RADIOCARPAL JOINT)</div>
+    </div>
+    <div class="region-text">
+      <h2>Wrist (Radiocarpal Joint)</h2>
+      <p>The main wrist joint sits between the rounded end of the radius and the oval face of the first row of carpal bones — an oval fitting into a shallow oval socket, which makes it a condyloid joint. That shape allows the hand to rock forward and back and tilt side to side, but not to twist independently; any rotation you feel at the wrist actually comes from the radius and ulna twisting around each other further up the forearm.</p>
+      <p>Because every load the hand carries has to pass through this one joint on its way to the arm, it's built more for controlled stability than for the wide swing seen further out in the fingers — a trade-off that becomes clearer at each joint further down this report.</p>
+      <div class="tag-row"><span class="tag">RADIOCARPAL — CONDYLOID</span><span class="tag">FLEXION/EXTENSION</span><span class="tag">RADIAL/ULNAR DEVIATION</span></div>
+    </div>
+  </section>
+
+  <!-- 2. INTERCARPAL / MIDCARPAL -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <rect class="mass" x="44" y="54" width="30" height="16" rx="3"/>
+          <rect class="mass" x="78" y="54" width="30" height="16" rx="3"/>
+          <rect class="mass" x="112" y="54" width="30" height="16" rx="3"/>
+          <rect class="mass" x="146" y="54" width="30" height="16" rx="3"/>
+          <rect class="mass" x="50" y="82" width="30" height="16" rx="3"/>
+          <rect class="mass" x="84" y="82" width="30" height="16" rx="3"/>
+          <rect class="mass" x="118" y="82" width="30" height="16" rx="3"/>
+          <rect class="mass" x="152" y="82" width="30" height="16" rx="3"/>
+          <ellipse class="disc" cx="115" cy="74" rx="75" ry="3.5"/>
+          <path class="rom" d="M95,74 Q115,66 135,74" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="200" y="56">intercarpal</text>
+          <text class="svglabel" x="200" y="70">plane — glide</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 2 — INTERCARPAL &amp; MIDCARPAL JOINTS</div>
+    </div>
+    <div class="region-text">
+      <h2>Intercarpal &amp; Midcarpal Joints</h2>
+      <p>Between the wrist joint and the palm sit eight small carpal bones, arranged in two rows of four. Every bone touches its neighbors through a flat plane joint, and the seam between the two rows — the midcarpal joint — lets the whole distal row glide slightly against the whole proximal row.</p>
+      <p>No single one of these joints moves very far on its own, much like the small facet joints between vertebrae in the spine. But eight small glides stacked together give the wrist its rounded, cushioned feel of motion and let it absorb shock that would otherwise transmit straight through to the forearm.</p>
+      <div class="tag-row"><span class="tag">INTERCARPAL — PLANE</span><span class="tag">MIDCARPAL — GLIDE</span></div>
+    </div>
+  </section>
+
+  <!-- 3. THUMB CMC (SADDLE) -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <rect class="mass" x="112" y="112" width="60" height="30" rx="8"/>
+          <path class="bone-ghost" d="M112,116 Q142,100 172,116"/>
+          <path class="bone" d="M142,110 L96,52"/>
+          <path class="bone-ghost" d="M142,110 L186,64"/>
+          <circle class="pivot" cx="142" cy="110" r="5"/>
+          <path class="rom" d="M100,58 A66,66 0 0 1 182,68" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="176" y="128">thumb CMC</text>
+          <text class="svglabel" x="176" y="142">saddle</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 3 — THUMB CARPOMETACARPAL JOINT</div>
+    </div>
+    <div class="region-text">
+      <h2>Thumb Carpometacarpal Joint</h2>
+      <p>At the base of the thumb, the metacarpal meets the trapezium bone through a saddle joint — two surfaces that are each concave in one direction and convex in the other, interlocking like a rider sitting in a saddle. It's the rarest joint shape in the body, and the hand only has one of them.</p>
+      <p>That saddle shape is what lets the thumb swing across the palm to touch each fingertip — a movement called opposition that no other digit's base joint can perform. It's also what makes precision grip possible at all, though the same mobility leaves this joint especially prone to wear, which is why thumb-base arthritis is so common later in life.</p>
+      <div class="tag-row"><span class="tag">CARPOMETACARPAL (THUMB) — SADDLE</span><span class="tag">OPPOSITION</span></div>
+    </div>
+  </section>
+
+  <!-- 4. FINGER CMC (2ND-5TH) -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <rect class="mass" x="38" y="120" width="176" height="16" rx="4"/>
+          <path class="bone" d="M58,120 L58,58"/>
+          <path class="rom" d="M50,98 Q58,92 66,98" marker-end="url(#arrow)"/>
+          <path class="bone" d="M94,120 L94,56"/>
+          <path class="rom" d="M85,96 Q94,90 103,96" marker-end="url(#arrow)"/>
+          <path class="bone" d="M130,120 L132,58"/>
+          <path class="bone-ghost" d="M130,120 L146,68"/>
+          <path class="rom" d="M116,94 Q132,82 148,94" marker-end="url(#arrow)"/>
+          <path class="bone" d="M166,120 L172,60"/>
+          <path class="bone-ghost" d="M166,120 L192,72"/>
+          <path class="rom" d="M150,92 Q172,76 192,92" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="222" y="66">CMC (2nd–5th)</text>
+          <text class="svglabel" x="222" y="80">plane — variable</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 4 — FINGER CARPOMETACARPAL JOINTS</div>
+    </div>
+    <div class="region-text">
+      <h2>Finger Carpometacarpal Joints</h2>
+      <p>Where the four finger metacarpals meet the carpal row, the joints are flat plane joints rather than saddles — and they're not all equally mobile. The index and middle finger joints are bound tightly by ligaments and barely move, giving the hand a rigid central platform to push and pinch against.</p>
+      <p>The ring and little finger joints, by contrast, have noticeably more give, shown by the wider arcs in the diagram. That extra glide is what lets the ulnar side of the palm fold inward, cupping around a ball or a handle in a way the index and middle side of the hand simply can't.</p>
+      <div class="tag-row"><span class="tag">CMC (FINGERS) — PLANE</span><span class="tag">VARIABLE MOBILITY</span></div>
+    </div>
+  </section>
+
+  <!-- 5. MCP (KNUCKLE) -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,18 L150,96"/>
+          <circle class="mass" cx="150" cy="96" r="10"/>
+          <path class="bone" d="M150,96 L108,146"/>
+          <path class="bone-ghost" d="M150,96 L150,178"/>
+          <circle class="pivot" cx="150" cy="96" r="5"/>
+          <path class="rom" d="M150,150 Q126,128 114,104" marker-end="url(#arrow)"/>
+          <path class="rom" d="M132,84 Q150,76 168,84" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="176" y="94">MCP — knuckle</text>
+          <text class="svglabel" x="176" y="108">condyloid</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 5 — METACARPOPHALANGEAL JOINTS</div>
+    </div>
+    <div class="region-text">
+      <h2>Metacarpophalangeal Joints (Knuckles)</h2>
+      <p>The big knuckles — where each finger meets the palm — are condyloid joints: the rounded head of the metacarpal rocks inside a shallow socket at the base of the finger's first bone. Held straight, as in the diagram's smaller side arc, the fingers can also fan apart and together at this joint.</p>
+      <p>That side-to-side spread disappears once the fingers curl into a fist, because the ligaments on either side of the joint tighten as it bends and lock the knuckle into a single hinge-like plane. It's a small mechanical detail that makes a clenched fist far more stable than an open hand.</p>
+      <div class="tag-row"><span class="tag">METACARPOPHALANGEAL — CONDYLOID</span><span class="tag">FLEXION + ABDUCTION</span></div>
+    </div>
+  </section>
+
+  <!-- 6. PIP JOINT -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,16 L150,96"/>
+          <path class="bone" d="M150,96 L150,178"/>
+          <path class="bone-ghost" d="M150,96 L96,132"/>
+          <circle class="pivot" cx="150" cy="96" r="5"/>
+          <path class="rom" d="M150,142 Q112,124 100,98" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="160" y="94">PIP joint</text>
+          <text class="svglabel" x="160" y="108">hinge</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 6 — PROXIMAL INTERPHALANGEAL JOINTS</div>
+    </div>
+    <div class="region-text">
+      <h2>Proximal Interphalangeal Joints</h2>
+      <p>Moving out along the finger, the joint between the first and second bones is a pure hinge — no side-to-side motion at all, just a wide swing in a single plane, shown by the long arc in the diagram. It's the largest range of motion of any joint in the finger, often bending past 100 degrees.</p>
+      <p>Because it does most of the work of curling the finger into a hook or a fist, this joint takes a lot of mechanical strain, and it's stabilized by tight collateral ligaments and a fibrous plate on its palm side that stops it from bending backward. It's also the joint most often "jammed" in ball sports.</p>
+      <div class="tag-row"><span class="tag">PROXIMAL INTERPHALANGEAL — HINGE</span></div>
+    </div>
+  </section>
+
+  <!-- 7. DIP JOINT -->
+  <section class="region">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,26 L150,96"/>
+          <path class="bone" d="M150,96 L150,168"/>
+          <path class="bone-ghost" d="M150,96 L112,124"/>
+          <circle class="pivot" cx="150" cy="96" r="4.5"/>
+          <path class="rom" d="M150,132 Q126,118 116,98" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="160" y="94">DIP joint</text>
+          <text class="svglabel" x="160" y="108">hinge</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 7 — DISTAL INTERPHALANGEAL JOINTS</div>
+    </div>
+    <div class="region-text">
+      <h2>Distal Interphalangeal Joints</h2>
+      <p>The joint closest to the fingertip is also a hinge, but a noticeably shallower one — the shorter arc in the diagram reflects a smaller range of motion than its neighbor further up the finger. It's driven by a single tendon that runs the full length of the forearm to reach it.</p>
+      <p>Fine as its movement is, this joint does a disproportionate share of the hand's precision work: the last small adjustment of pressure and angle when pinching a coin, threading a needle, or typing. Its narrow range also makes it more vulnerable to jamming from a straight-on impact, such as a fingertip catching a ball.</p>
+      <div class="tag-row"><span class="tag">DISTAL INTERPHALANGEAL — HINGE</span></div>
+    </div>
+  </section>
+
+  <!-- 8. THUMB IP JOINT -->
+  <section class="region region--reverse">
+    <div class="diagram-wrap">
+      <div class="diagram-frame"><span class="tick-bl"></span><span class="tick-br"></span>
+        <svg class="diagram-svg" viewBox="0 0 300 200">
+          <path class="bone" d="M150,40 L150,104"/>
+          <path class="bone" d="M150,104 L150,168"/>
+          <path class="bone-ghost" d="M150,104 L104,138"/>
+          <circle class="pivot" cx="150" cy="104" r="5"/>
+          <path class="rom" d="M150,148 Q120,132 108,106" marker-end="url(#arrow)"/>
+          <text class="svglabel" x="160" y="102">thumb IP</text>
+          <text class="svglabel" x="160" y="116">hinge</text>
+        </svg>
+      </div>
+      <div class="fig-caption">FIG. 8 — THUMB INTERPHALANGEAL JOINT</div>
+    </div>
+    <div class="region-text">
+      <h2>Thumb Interphalangeal Joint</h2>
+      <p>The thumb breaks the pattern seen in the other four fingers: it has only two bones instead of three, so it has just one interphalangeal joint instead of two. Like its counterparts in the fingers, it's a simple hinge, bending and straightening in a single plane.</p>
+      <p>On its own it's an unremarkable joint, but it's the last link in a chain — saddle joint at the base, condyloid joint at the knuckle, hinge here at the tip — that together let the thumb pivot, spread, and curl into the precise pinch grip the rest of the hand is built around.</p>
+      <div class="tag-row"><span class="tag">THUMB INTERPHALANGEAL — HINGE</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>These diagrams are simplified schematics, not anatomically exact drawings — they're meant to show each joint's shape and direction of movement at a glance. For how these joints fit into the broader skeletal system, see the companion report, <em>The Skeletal Joint System — Region by Region</em>.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
