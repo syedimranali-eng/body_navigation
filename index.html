@@ -1,0 +1,2613 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anatomy Joint Lab — Interactive 3D Skeleton</title>
+    <style>
+      :root {
+        --bg: #071018;
+        --panel: #0d1b27;
+        --panel2: #102434;
+        --line: #213a4b;
+        --text: #eaf4f7;
+        --muted: #90a9b7;
+        --accent: #42d6c6;
+        --accent2: #ffb35c;
+        --danger: #ef6b73;
+        --bone: #e7dcc5;
+        --shadow: rgba(0, 0, 0, 0.32);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        overflow: hidden;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      #app {
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 270px minmax(0, 1fr) 330px;
+        grid-template-rows: 58px minmax(0, 1fr) 72px;
+        grid-template-areas: "top top top" "nav stage info" "bottom bottom bottom";
+        background: radial-gradient(
+          circle at 50% 35%,
+          #112a3b 0,
+          #071018 50%,
+          #050a0f 100%
+        );
+      }
+      .topbar {
+        grid-area: top;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(7, 16, 24, 0.88);
+        backdrop-filter: blur(14px);
+        z-index: 4;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 230px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
+      }
+      .brand-mark {
+        width: 29px;
+        height: 29px;
+        border-radius: 50%;
+        border: 2px solid var(--accent);
+        position: relative;
+        box-shadow: 0 0 18px #42d6c655;
+      }
+      .brand-mark:after {
+        content: "";
+        position: absolute;
+        inset: 7px;
+        border-radius: 50%;
+        border: 1px solid var(--accent2);
+      }
+      .tag {
+        color: var(--accent);
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        border: 1px solid #42d6c655;
+        border-radius: 99px;
+        padding: 4px 7px;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 390px;
+        flex: 1;
+        background: #0a1722;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 10px;
+      }
+      .search input {
+        width: 100%;
+        height: 34px;
+        background: transparent;
+        border: 0;
+        outline: 0;
+        color: var(--text);
+      }
+      .top-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 7px;
+      }
+      .side {
+        background: rgba(10, 24, 35, 0.89);
+        border-right: 1px solid var(--line);
+        min-height: 0;
+        overflow: auto;
+      }
+      .nav {
+        grid-area: nav;
+        padding: 18px 14px;
+      }
+      .info {
+        grid-area: info;
+        border-right: 0;
+        border-left: 1px solid var(--line);
+        padding: 18px 15px;
+      }
+      .panel-title {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.17em;
+        font-weight: 700;
+      }
+      .tree {
+        display: grid;
+        gap: 3px;
+      }
+      .tree button {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #c9dae1;
+        padding: 8px 9px;
+        text-align: left;
+        cursor: pointer;
+      }
+      .tree button:hover,
+      .tree button.active {
+        background: #183244;
+        color: #fff;
+      }
+      .tree .branch {
+        color: var(--accent);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 12px 9px 4px;
+      }
+      .tree .indent {
+        padding-left: 21px;
+        font-size: 13px;
+      }
+      .tree .tiny {
+        padding-left: 33px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      #stage {
+        grid-area: stage;
+        position: relative;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .canvas-wrap {
+        position: absolute;
+        inset: 0;
+      }
+      .canvas-wrap canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        outline: none;
+      }
+      .stage-card {
+        position: absolute;
+        left: 16px;
+        top: 15px;
+        pointer-events: none;
+      }
+      .stage-card h1 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .stage-card p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .viewport-note {
+        position: absolute;
+        right: 15px;
+        bottom: 13px;
+        color: #b9d0d9a8;
+        background: #07101899;
+        border: 1px solid #294252aa;
+        border-radius: 7px;
+        padding: 7px 9px;
+        font-size: 11px;
+        pointer-events: none;
+      }
+      .hover-card {
+        position: absolute;
+        display: none;
+        pointer-events: none;
+        padding: 6px 8px;
+        color: #e9ffff;
+        background: #0d2432ef;
+        border: 1px solid #367284;
+        border-radius: 5px;
+        font-size: 11px;
+        z-index: 3;
+      }
+      .bottom {
+        grid-area: bottom;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 11px 16px;
+        border-top: 1px solid var(--line);
+        background: rgba(7, 16, 24, 0.93);
+        z-index: 4;
+      }
+      .split {
+        width: 1px;
+        height: 32px;
+        background: var(--line);
+        margin: 0 2px;
+      }
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .grow {
+        flex: 1;
+      }
+      .btn {
+        border: 1px solid #315164;
+        background: #102332;
+        color: #d7e6ea;
+        border-radius: 7px;
+        padding: 7px 9px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: 0.16s ease;
+      }
+      .btn:hover {
+        background: #18384b;
+        border-color: #4b8295;
+      }
+      .btn.primary {
+        background: #167d78;
+        border-color: #36c6ba;
+        color: #fff;
+      }
+      .btn.active {
+        background: #2b5570;
+        border-color: #65d4e0;
+        color: #fff;
+      }
+      .btn.danger {
+        color: #ffb1b6;
+        border-color: #8f3e49;
+      }
+      .btn:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+      }
+      .view-btn {
+        min-width: 45px;
+        padding-inline: 7px;
+      }
+      .selection-head {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 14px;
+        margin-bottom: 13px;
+      }
+      .kindline {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 7px;
+      }
+      .selection-head h2 {
+        font-size: 21px;
+        margin: 0 0 5px;
+        line-height: 1.12;
+      }
+      .selection-head p {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.45;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 9px;
+      }
+      .field {
+        padding-bottom: 8px;
+        border-bottom: 1px solid #1c3442;
+      }
+      .field:last-child {
+        border: 0;
+      }
+      .field span {
+        display: block;
+        color: #7795a4;
+        text-transform: uppercase;
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        margin-bottom: 3px;
+      }
+      .field b {
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 1.35;
+        display: block;
+      }
+      .rom {
+        margin: 15px 0 13px;
+        padding: 12px;
+        border-radius: 9px;
+        background: #0b1a25;
+        border: 1px solid #274253;
+      }
+      .rom-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 7px;
+      }
+      .rom-head strong {
+        font-size: 12px;
+      }
+      .rom-head output {
+        font-variant-numeric: tabular-nums;
+        color: var(--accent2);
+        font-size: 12px;
+      }
+      .rom input {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+      .rom-hint {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.4;
+      }
+      .part-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 14px;
+      }
+      .action-note {
+        margin: 11px 0 0;
+        color: #7896a5;
+        font-size: 10px;
+        line-height: 1.4;
+      }
+      .layer-title {
+        margin: 22px 0 8px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .layers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px 9px;
+      }
+      .check {
+        font-size: 11px;
+        color: #c8dae0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .check input {
+        accent-color: var(--accent);
+      }
+      .legend {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        font-size: 10px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+      }
+      .dot.bone {
+        background: var(--bone);
+      }
+      .dot.joint {
+        background: var(--accent2);
+      }
+      .dot.soft {
+        background: #c97878;
+      }
+      .dot.selected {
+        background: var(--accent);
+      }
+      .toast {
+        position: absolute;
+        z-index: 8;
+        left: 50%;
+        bottom: 87px;
+        transform: translate(-50%, 10px);
+        opacity: 0;
+        pointer-events: none;
+        background: #102c39;
+        color: #eaffff;
+        border: 1px solid #41798c;
+        border-radius: 8px;
+        padding: 9px 12px;
+        font-size: 12px;
+        transition: 0.22s ease;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      @media (max-width: 1050px) {
+        #app {
+          grid-template-columns: 230px minmax(0, 1fr) 292px;
+        }
+        .brand {
+          min-width: auto;
+        }
+        .brand .tag {
+          display: none;
+        }
+      }
+      @media (max-width: 760px) {
+        body {
+          overflow: auto;
+        }
+        #app {
+          height: auto;
+          min-height: 100vh;
+          grid-template-columns: 1fr;
+          grid-template-rows: 58px auto 56vh auto 72px;
+          grid-template-areas: "top" "nav" "stage" "info" "bottom";
+        }
+        .side {
+          border: 0;
+          border-bottom: 1px solid var(--line);
+          max-height: 290px;
+        }
+        .info {
+          border-top: 1px solid var(--line);
+        }
+        .nav {
+          padding: 12px;
+        }
+        .tree {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .tree .branch {
+          grid-column: 1/-1;
+        }
+        .tree .indent,
+        .tree .tiny {
+          padding-left: 9px;
+        }
+        .top-actions .btn:not(.primary) {
+          display: none;
+        }
+        .bottom {
+          align-items: flex-start;
+          overflow: auto;
+        }
+        .stage-card {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span
+          ><span>ANATOMY JOINT LAB</span><span class="tag">3D INTERACTIVE</span>
+        </div>
+        <label class="search" aria-label="Search anatomy"
+          ><span aria-hidden="true">⌕</span
+          ><input
+            id="search"
+            type="search"
+            autocomplete="off"
+            placeholder="Search bone, joint, or region…"
+        /></label>
+        <div class="top-actions">
+          <button class="btn active" id="labelsBtn" type="button">Labels</button
+          ><button class="btn active" id="xrayBtn" type="button">X-ray</button
+          ><button class="btn primary" id="screenshot" type="button">
+            Export PNG
+          </button>
+        </div>
+      </header>
+      <aside class="side nav" aria-label="Anatomical navigation">
+        <h2 class="panel-title">Body navigator</h2>
+        <nav class="tree" id="tree">
+          <button class="branch" data-region="whole-body">BODY SYSTEM</button>
+          <button class="indent" data-region="head">⌄ Head &amp; jaw</button
+          ><button class="tiny" data-id="skull">Skull</button
+          ><button class="tiny" data-id="mandible">Mandible / TMJ</button>
+          <button class="indent" data-region="neck">⌄ Neck</button
+          ><button class="tiny" data-id="occiput-c1">Occiput–C1</button
+          ><button class="tiny" data-id="c1-c2">C1–C2</button>
+          <button class="indent" data-region="left-arm">⌄ Left arm</button
+          ><button class="tiny" data-region="left-hand">
+            Hand &amp; fingers
+          </button>
+          <button class="indent" data-region="right-arm">⌄ Right arm</button
+          ><button class="tiny" data-region="right-hand">
+            Hand &amp; fingers
+          </button>
+          <button class="indent" data-region="spine">
+            ⌄ Thoracic &amp; lumbar spine</button
+          ><button class="tiny" data-id="spinal-discs">
+            Intervertebral discs
+          </button>
+          <button class="indent" data-region="pelvis">Pelvis &amp; hips</button>
+          <button class="indent" data-region="left-leg">⌄ Left leg</button
+          ><button class="tiny active" data-region="left-foot">
+            Ankle &amp; foot
+          </button>
+          <button class="indent" data-region="right-leg">⌄ Right leg</button
+          ><button class="tiny" data-region="right-foot">
+            Ankle &amp; foot
+          </button>
+        </nav>
+      </aside>
+      <section id="stage" aria-label="Interactive 3D anatomical viewport">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas
+            data-engine="three.js r160"
+            width="595"
+            height="710"
+            style="
+              display: block;
+              width: 476px;
+              height: 568px;
+              touch-action: none;
+              cursor: grab;
+            "
+          ></canvas>
+        </div>
+        <div class="stage-card">
+          <h1>Full skeletal joint system</h1>
+          <p>Drag to orbit · Scroll to zoom · Click any structure to inspect</p>
+        </div>
+        <div
+          class="hover-card"
+          id="hoverCard"
+          style="display: none; left: 201.8px; top: 103.4px"
+        >
+          Left tibia
+        </div>
+        <div class="viewport-note">
+          Selectable bones · joints · cartilage · ligaments
+        </div>
+        <div class="toast" id="toast" aria-live="polite">
+          X-ray material mode enabled
+        </div>
+      </section>
+      <aside class="side info" aria-label="Structure information">
+        <div id="infoContent">
+          <div class="selection-head">
+            <div class="kindline">Region · 24 visible components</div>
+            <h2>Left ankle &amp; foot</h2>
+            <p>
+              Independent left ankle &amp; foot region. Select it to inspect,
+              isolate, hide, detach, or restore its anatomical components.
+            </p>
+          </div>
+          <div class="info-grid">
+            <div class="field">
+              <span>Selection scope</span
+              ><b>24 independently identified anatomical components</b>
+            </div>
+            <div class="field">
+              <span>Available actions</span
+              ><b>Focus, isolate, remove, detach, restore and explode</b>
+            </div>
+          </div>
+          <div class="part-actions">
+            <button class="btn primary" id="infoIsolate" type="button">
+              Isolate</button
+            ><button class="btn danger" id="infoRemove" type="button">
+              Remove</button
+            ><button class="btn" id="infoDetach" type="button">Detach</button
+            ><button class="btn" id="infoRestore" type="button">
+              Restore / reset
+            </button>
+          </div>
+          <p class="action-note">
+            Remove is non-destructive: every hidden or detached item can be
+            restored. A parent region carries its child components while
+            preserving their individual IDs.
+          </p>
+          <div class="layer-title">Visibility layers</div>
+          <div class="layers">
+            <label class="check"
+              ><input type="checkbox" data-layer="whole" checked="" />Whole
+              skeleton</label
+            ><label class="check"
+              ><input type="checkbox" data-layer="bones" checked="" />Individual
+              bones</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="joints"
+                checked=""
+              />Joints</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="cartilage"
+                checked=""
+              />Cartilage</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="discs"
+                checked=""
+              />Intervertebral discs</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="menisci"
+                checked=""
+              />Menisci</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="ligaments"
+                checked=""
+              />Ligaments</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="muscles"
+                checked=""
+              />Muscles</label
+            ><label class="check"
+              ><input type="checkbox" data-layer="skin" checked="" />Skin /
+              external body</label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                data-layer="labels"
+                checked=""
+              />Labels</label
+            >
+          </div>
+          <div class="legend">
+            <span class="dot bone"></span>bone &nbsp;
+            <span class="dot joint"></span>joint &nbsp;
+            <span class="dot soft"></span>soft tissue &nbsp;
+            <span class="dot selected"></span>selected
+          </div>
+        </div>
+      </aside>
+      <footer class="bottom">
+        <div class="control-group">
+          <button class="btn primary" id="explode" type="button">
+            Exploded view</button
+          ><button class="btn" id="reassemble" type="button">Reassemble</button
+          ><span class="split"></span
+          ><button class="btn" id="isolate" type="button">Isolate</button
+          ><button class="btn danger" id="remove" type="button">Remove</button
+          ><button class="btn" id="detach" type="button">Detach</button
+          ><button class="btn" id="restore" type="button">Restore</button>
+        </div>
+        <div class="grow"></div>
+        <div class="control-group">
+          <button class="btn view-btn" data-view="front" type="button">
+            Front</button
+          ><button class="btn view-btn" data-view="back" type="button">
+            Back</button
+          ><button class="btn view-btn" data-view="left" type="button">
+            Left</button
+          ><button class="btn view-btn" data-view="right" type="button">
+            Right</button
+          ><button class="btn" id="fullbody" type="button">Full body</button
+          ><button class="btn" id="resetcam" type="button">Reset camera</button>
+        </div>
+      </footer>
+    </main>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js";
+      import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js";
+
+      const wrap = document.getElementById("canvasWrap"),
+        stage = document.getElementById("stage");
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      wrap.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x071018, 18, 42);
+      const camera = new THREE.PerspectiveCamera(
+        38,
+        wrap.clientWidth / wrap.clientHeight,
+        0.1,
+        100,
+      );
+      camera.position.set(13, 7.4, 24);
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 3.2, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.minDistance = 6;
+      controls.maxDistance = 37;
+      controls.maxPolarAngle = Math.PI * 0.89;
+      scene.add(new THREE.HemisphereLight(0xbfe8ef, 0x152433, 2.1));
+      const key = new THREE.DirectionalLight(0xe5fbff, 2.8);
+      key.position.set(8, 14, 10);
+      key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048);
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0x39bfc8, 1.2);
+      rim.position.set(-9, 8, -12);
+      scene.add(rim);
+      const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(13, 64),
+        new THREE.MeshStandardMaterial({
+          color: 0x0b1a23,
+          roughness: 1,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.75,
+        }),
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -4.25;
+      floor.receiveShadow = true;
+      scene.add(floor);
+      const grid = new THREE.GridHelper(25, 25, 0x254354, 0x152936);
+      grid.position.y = -4.23;
+      grid.material.transparent = true;
+      grid.material.opacity = 0.42;
+      scene.add(grid);
+      const bodyRoot = new THREE.Group();
+      bodyRoot.name = "Whole skeleton";
+      scene.add(bodyRoot);
+      const layers = {
+        bones: new THREE.Group(),
+        joints: new THREE.Group(),
+        cartilage: new THREE.Group(),
+        discs: new THREE.Group(),
+        menisci: new THREE.Group(),
+        ligaments: new THREE.Group(),
+        muscles: new THREE.Group(),
+        skin: new THREE.Group(),
+        labels: new THREE.Group(),
+      };
+      Object.values(layers).forEach((g) => bodyRoot.add(g));
+      layers.skin.visible = true;
+      const items = new Map(),
+        allObjects = [],
+        regionMap = new Map(),
+        motionRigs = new Map(),
+        labelSprites = [];
+      let selected = null,
+        isolated = null,
+        exploded = false,
+        xray = false,
+        lastSelection = [];
+      const C = {
+        bone: 0xe7dcc5,
+        joint: 0xffb45c,
+        cartilage: 0x4abcc3,
+        disc: 0xb98bd4,
+        ligament: 0xe6b34d,
+        muscle: 0xb24b4b,
+        skin: 0xe4b298,
+        select: 0x48e4cf,
+      };
+      const mat = (color, extra = {}) =>
+        new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.55,
+          metalness: 0.03,
+          ...extra,
+        });
+      const mats = {
+        bone: mat(C.bone),
+        joint: mat(C.joint, { emissive: 0x4a2703, emissiveIntensity: 0.3 }),
+        cartilage: mat(C.cartilage, { transparent: true, opacity: 0.78 }),
+        disc: mat(C.disc, { transparent: true, opacity: 0.74 }),
+        ligament: mat(C.ligament, { transparent: true, opacity: 0.62 }),
+        muscle: mat(C.muscle, { transparent: true, opacity: 0.42 }),
+        skin: mat(C.skin, {
+          transparent: true,
+          opacity: 0.78,
+          side: THREE.DoubleSide,
+        }),
+      };
+      const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+      const vkey = (v) =>
+        `${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(2)}`;
+      function getTags(tags) {
+        return Array.isArray(tags) ? tags : [tags];
+      }
+      function reg(id, name, center, tags = []) {
+        regionMap.set(id, {
+          id,
+          name,
+          kind: "region",
+          center: V(...center),
+          tags: [id],
+          description: `Independent ${name.toLowerCase()} region. Select it to inspect, isolate, hide, detach, or restore its anatomical components.`,
+        });
+      }
+      const regionDefs = [
+        ["whole-body", "Whole skeletal system", [0, 3, 0]],
+        ["head", "Head & jaw", [0, 10, 0]],
+        ["neck", "Neck", [0, 8.9, 0]],
+        ["left-arm", "Left arm", [-4, 6.5, 0]],
+        ["right-arm", "Right arm", [4, 6.5, 0]],
+        ["left-hand", "Left hand", [-4, 2.3, 0], ["left-arm"]],
+        ["right-hand", "Right hand", [4, 2.3, 0], ["right-arm"]],
+        ["spine", "Thoracic & lumbar spine", [0, 5.6, 0]],
+        ["pelvis", "Pelvis & hips", [0, 2.8, 0]],
+        ["left-leg", "Left leg", [-1.15, -0.6, 0]],
+        ["right-leg", "Right leg", [1.15, -0.6, 0]],
+        ["left-foot", "Left ankle & foot", [-1.15, -3.35, 0.3], ["left-leg"]],
+        ["right-foot", "Right ankle & foot", [1.15, -3.35, 0.3], ["right-leg"]],
+      ];
+      regionDefs.forEach((r) => reg(...r));
+      function meta(id, name, kind, tags, center, data = {}) {
+        const entry = {
+          id,
+          name,
+          kind,
+          tags: getTags(tags),
+          center: center?.clone?.() || V(...center),
+          hidden: false,
+          detached: false,
+          home: null,
+          object: null,
+          ...data,
+        };
+        items.set(id, entry);
+        return entry;
+      }
+      function setPickable(obj, entry) {
+        obj.traverse((n) => {
+          if (n.isMesh) {
+            n.userData.anatomy = entry;
+            n.castShadow = true;
+            n.receiveShadow = true;
+          }
+        });
+      }
+      function addLabel(target, text, offset = V(0.25, 0.25, 0)) {
+        const c = document.createElement("canvas");
+        c.width = 280;
+        c.height = 64;
+        const x = c.getContext("2d");
+        x.font = "500 25px Arial";
+        x.fillStyle = "#e5f6f6";
+        x.shadowColor = "#061018";
+        x.shadowBlur = 7;
+        x.fillText(text, 8, 38);
+        const spr = new THREE.Sprite(
+          new THREE.SpriteMaterial({
+            map: new THREE.CanvasTexture(c),
+            transparent: true,
+            depthTest: false,
+          }),
+        );
+        spr.scale.set(1.4, 0.32, 1);
+        spr.position.copy(offset);
+        target.add(spr);
+        labelSprites.push(spr);
+        return spr;
+      }
+      function namedMesh(id, name, kind, tags, mesh, layer, center, data = {}) {
+        const e = meta(id, name, kind, tags, center, data);
+        e.object = mesh;
+        e.home = mesh.position.clone();
+        e.baseScale = mesh.scale.clone();
+        layer.add(mesh);
+        setPickable(mesh, e);
+        allObjects.push(e);
+        return e;
+      }
+      function localNamedMesh(
+        id,
+        name,
+        kind,
+        tags,
+        mesh,
+        parent,
+        center,
+        data = {},
+      ) {
+        const e = meta(id, name, kind, tags, center, data);
+        e.object = mesh;
+        e.home = mesh.position.clone();
+        e.baseScale = mesh.scale.clone();
+        parent.add(mesh);
+        setPickable(mesh, e);
+        allObjects.push(e);
+        return e;
+      }
+      function bone(
+        id,
+        name,
+        tags,
+        a,
+        b,
+        r = 0.16,
+        parent = layers.bones,
+        data = {},
+      ) {
+        const start = a.clone(),
+          end = b.clone(),
+          dir = end.clone().sub(start),
+          len = dir.length();
+        const g = new THREE.Group();
+        g.position.copy(start.clone().add(end).multiplyScalar(0.5));
+        g.quaternion.setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          dir.normalize(),
+        );
+        const shaft = new THREE.Mesh(
+          new THREE.CylinderGeometry(r * 0.82, r, len, 10, 1),
+          mats.bone.clone(),
+        );
+        shaft.castShadow = true;
+        shaft.receiveShadow = true;
+        g.add(shaft);
+        const capGeo = new THREE.SphereGeometry(r * 1.05, 12, 10);
+        const capA = new THREE.Mesh(capGeo, mats.bone.clone()),
+          capB = new THREE.Mesh(capGeo, mats.bone.clone());
+        capA.position.y = -len / 2;
+        capB.position.y = len / 2;
+        g.add(capA, capB);
+        const parentIsLayer = Object.values(layers).includes(parent);
+        let e;
+        if (parentIsLayer) {
+          e = namedMesh(
+            id,
+            name,
+            "bone",
+            tags,
+            g,
+            layers.bones,
+            g.position,
+            data,
+          );
+        } else {
+          e = localNamedMesh(
+            id,
+            name,
+            "bone",
+            tags,
+            g,
+            parent,
+            g.position,
+            data,
+          );
+        }
+        e.home = g.position.clone();
+        e.explode = g
+          .getWorldPosition(new THREE.Vector3())
+          .normalize()
+          .multiplyScalar(0.46);
+        return e;
+      }
+      function blob(
+        id,
+        name,
+        kind,
+        tags,
+        pos,
+        scale,
+        layer = layers.bones,
+        data = {},
+      ) {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(1, 18, 14),
+          (mats[kind] || mats.bone).clone(),
+        );
+        m.position.copy(pos);
+        m.scale.set(...scale);
+        const e = namedMesh(id, name, kind, tags, m, layer, pos, data);
+        e.explode = pos.clone().normalize().multiplyScalar(0.52);
+        return e;
+      }
+      function marker(id, name, tags, pos, parent = layers.joints, data = {}) {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(0.17, 16, 12),
+          mats.joint.clone(),
+        );
+        m.position.copy(pos);
+        const e = Object.values(layers).includes(parent)
+          ? namedMesh(id, name, "joint", tags, m, layers.joints, pos, data)
+          : localNamedMesh(id, name, "joint", tags, m, parent, pos, data);
+        e.home = m.position.clone();
+        e.explode = pos.clone().normalize().multiplyScalar(0.36);
+        addLabel(m, name.replace(/ \(left\)| \(right\)/i, ""), V(0.22, 0.2, 0));
+        return e;
+      }
+      function softLine(id, name, kind, tags, a, b, r, layer, data = {}) {
+        const start = a.clone(),
+          end = b.clone(),
+          dir = end.clone().sub(start),
+          len = dir.length(),
+          m = new THREE.Mesh(
+            new THREE.CylinderGeometry(r, r, len, 8),
+            mats[kind].clone(),
+          );
+        m.position.copy(start.clone().add(end).multiplyScalar(0.5));
+        m.quaternion.setFromUnitVectors(V(0, 1, 0), dir.normalize());
+        const e = namedMesh(id, name, kind, tags, m, layer, m.position, data);
+        e.explode = m.position.clone().normalize().multiplyScalar(0.45);
+        return e;
+      }
+      function skinCapsule(id, name, tags, a, b, r, parent = layers.skin) {
+        const start = a.clone(),
+          end = b.clone(),
+          dir = end.clone().sub(start),
+          len = dir.length(),
+          m = new THREE.Mesh(
+            new THREE.CapsuleGeometry(r, Math.max(0.05, len - r * 2), 10, 18),
+            mats.skin.clone(),
+          );
+        m.position.copy(start.clone().add(end).multiplyScalar(0.5));
+        m.quaternion.setFromUnitVectors(V(0, 1, 0), dir.normalize());
+        const local = Object.values(layers).includes(parent);
+        const e = local
+          ? namedMesh(id, name, "skin", tags, m, layers.skin, m.position)
+          : localNamedMesh(id, name, "skin", tags, m, parent, m.position);
+        e.home = m.position.clone();
+        e.explode = m
+          .getWorldPosition(new THREE.Vector3())
+          .normalize()
+          .multiplyScalar(0.38);
+        return e;
+      }
+      const jointInfo = {
+        tmj: {
+          type: "Hinge + glide",
+          bones: "Mandible and temporal bone",
+          moves: "Opening / closing; small forward glide",
+          function: "Chewing and speech",
+          mobility: "Moderate, coupled hinge and translation",
+          stability: "Guided by articular disc and ligaments",
+          range: [0, 42],
+          axis: "Jaw opening",
+        },
+        occiput: {
+          type: "Condyloid",
+          bones: "Occipital condyles and atlas (C1)",
+          moves: "Flexion / extension (nodding); lateral tilt",
+          function: "Supports and balances the head",
+          mobility: "Controlled nodding range",
+          stability: "Bony cradle with capsular support",
+          range: [-15, 25],
+          axis: "Nod",
+        },
+        axis: {
+          type: "Pivot",
+          bones: "Atlas (C1) and axis (C2)",
+          moves: "Axial rotation",
+          function: "Primary head-turn joint",
+          mobility: "High rotation; minimal flexion",
+          stability: "Dens and transverse ligament",
+          range: [-45, 45],
+          axis: "Rotation",
+        },
+        shoulder: {
+          type: "Ball-and-socket",
+          bones: "Humeral head and glenoid of scapula",
+          moves:
+            "Flexion, extension, abduction, adduction, rotation, circumduction",
+          function: "Positions hand in space",
+          mobility: "Greatest joint mobility in the body",
+          stability: "Shallow socket; relies strongly on muscles and ligaments",
+          range: [-45, 150],
+          axis: "Arm elevation",
+        },
+        elbow: {
+          type: "Hinge",
+          bones: "Humerus and ulna",
+          moves: "Flexion and extension",
+          function: "Positions forearm for reach and load transfer",
+          mobility: "One primary plane",
+          stability: "Trochlear notch and collateral ligaments",
+          range: [0, 145],
+          axis: "Flexion",
+        },
+        radioulnar: {
+          type: "Pivot",
+          bones: "Radius and ulna",
+          moves: "Pronation and supination",
+          function: "Turns the palm without moving the elbow",
+          mobility: "Axial rotation",
+          stability: "Annular ligament and interosseous membrane",
+          range: [-80, 80],
+          axis: "Forearm rotation",
+        },
+        wrist: {
+          type: "Condyloid",
+          bones: "Radius and proximal carpal row",
+          moves: "Flexion, extension, radial and ulnar deviation",
+          function: "Controlled load transfer into hand",
+          mobility: "Two axes; no independent axial rotation",
+          stability: "Shallow oval socket prioritises control",
+          range: [-60, 60],
+          axis: "Wrist flexion",
+        },
+        intercarpal: {
+          type: "Plane",
+          bones: "Adjacent carpal bones",
+          moves: "Small gliding movements",
+          function: "Cushions and distributes wrist motion",
+          mobility: "Small individual glides; large combined effect",
+          stability: "Strong intercarpal ligaments",
+          range: [-10, 10],
+          axis: "Glide",
+        },
+        thumbcmc: {
+          type: "Saddle",
+          bones: "Trapezium and first metacarpal",
+          moves: "Flexion, extension, abduction, adduction, opposition",
+          function: "Precision grip and opposition",
+          mobility: "Two-axis mobility with rotation",
+          stability: "Mobile; susceptible to wear over time",
+          range: [-20, 55],
+          axis: "Opposition",
+        },
+        fingercmc: {
+          type: "Plane",
+          bones: "Carpal row and metacarpals 2–5",
+          moves: "Small glides; greater at ring/little finger",
+          function: "Rigid central palm with adaptable ulnar cup",
+          mobility: "Variable: index/middle restricted, ring/little freer",
+          stability: "Tight ligaments stabilize central hand",
+          range: [-10, 10],
+          axis: "Glide",
+        },
+        mcp: {
+          type: "Condyloid",
+          bones: "Metacarpal head and proximal phalanx",
+          moves: "Flexion / extension; abduction / adduction when extended",
+          function: "Finger positioning and grasp",
+          mobility: "Two axes when open",
+          stability: "Collateral ligaments tighten in flexion",
+          range: [-15, 90],
+          axis: "Knuckle flexion",
+        },
+        pip: {
+          type: "Hinge",
+          bones: "Proximal and middle phalanges",
+          moves: "Flexion / extension",
+          function: "Primary finger curl for hook and fist",
+          mobility: "Wide single-plane motion",
+          stability: "Collateral ligaments and volar plate",
+          range: [0, 110],
+          axis: "PIP flexion",
+        },
+        dip: {
+          type: "Hinge",
+          bones: "Middle and distal phalanges",
+          moves: "Flexion / extension",
+          function: "Fine fingertip pressure and angle adjustment",
+          mobility: "Shallower single-plane motion",
+          stability: "Tendon and capsule guidance",
+          range: [0, 80],
+          axis: "DIP flexion",
+        },
+        thumbip: {
+          type: "Hinge",
+          bones: "Proximal and distal thumb phalanges",
+          moves: "Flexion / extension",
+          function: "Final link of pinch grip",
+          mobility: "Single-plane motion",
+          stability: "Collateral ligaments",
+          range: [0, 80],
+          axis: "Thumb IP flexion",
+        },
+        disc: {
+          type: "Symphysis",
+          bones: "Adjacent vertebral bodies with fibrocartilage disc",
+          moves: "Small compression and tilt at each level",
+          function: "Shock absorption; collective spinal mobility",
+          mobility: "Small at each segment; substantial in aggregate",
+          stability: "Annulus fibrosus and longitudinal ligaments",
+          range: [-12, 12],
+          axis: "Segment flexion",
+        },
+        facet: {
+          type: "Plane",
+          bones: "Adjacent vertebral articular processes",
+          moves: "Guided gliding",
+          function: "Directs and limits vertebral movement",
+          mobility: "Small glides",
+          stability: "Facet orientation limits excess motion",
+          range: [-7, 7],
+          axis: "Facet glide",
+        },
+        hip: {
+          type: "Ball-and-socket",
+          bones: "Femoral head and acetabulum",
+          moves: "Flexion, extension, abduction, adduction, rotation",
+          function: "Weight-bearing locomotion",
+          mobility: "Multi-axis, less than shoulder",
+          stability: "Deep cup and strong capsule; highly stable",
+          range: [-20, 120],
+          axis: "Hip flexion",
+        },
+        knee: {
+          type: "Modified hinge",
+          bones: "Femur, tibia, patella",
+          moves: "Flexion / extension; small rotation when flexed",
+          function: "Weight-bearing, gait, shock management",
+          mobility: "Primarily one plane with slight rotation",
+          stability: "Menisci, cruciate and collateral ligaments",
+          range: [0, 135],
+          axis: "Knee flexion",
+        },
+        ankle: {
+          type: "Hinge",
+          bones: "Tibia, fibula and talus",
+          moves: "Dorsiflexion / plantarflexion",
+          function: "Foot clearance and push-off",
+          mobility: "Single primary plane",
+          stability: "Malleolar mortise and ligament complex",
+          range: [-20, 45],
+          axis: "Ankle flexion",
+        },
+        subtalar: {
+          type: "Plane / glide",
+          bones: "Talus and calcaneus",
+          moves: "Inversion / eversion",
+          function: "Adapts foot to uneven ground",
+          mobility: "Coupled gliding",
+          stability: "Joint facets and ligaments guide motion",
+          range: [-25, 25],
+          axis: "Foot roll",
+        },
+      };
+      function jointData(type, side, rig = null) {
+        const d = jointInfo[type];
+        return { ...d, side, rig, range: [...d.range] };
+      }
+      // Core axial skeleton
+      const skull = blob(
+        "skull",
+        "Skull",
+        "bone",
+        ["head"],
+        V(0, 10.25, 0),
+        [0.9, 1.03, 0.82],
+      );
+      addLabel(skull.object, "Skull", V(0.82, 0.55, 0));
+      const mandible = blob(
+        "mandible",
+        "Mandible",
+        "bone",
+        ["head"],
+        V(0, 9.43, 0.08),
+        [0.67, 0.23, 0.54],
+      );
+      marker(
+        "tmj-left",
+        "TMJ (left)",
+        ["head", "left"],
+        V(-0.67, 9.52, 0.03),
+        layers.joints,
+        jointData("tmj", "left", "jaw"),
+      );
+      marker(
+        "tmj-right",
+        "TMJ (right)",
+        ["head", "right"],
+        V(0.67, 9.52, 0.03),
+        layers.joints,
+        jointData("tmj", "right", "jaw"),
+      );
+      const neckRig = new THREE.Group();
+      neckRig.position.set(0, 8.8, 0);
+      layers.bones.add(neckRig);
+      motionRigs.set("neck", neckRig);
+      motionRigs.set("jaw", mandible.object);
+      ["atlas (C1)", "axis (C2)", "C3", "C4", "C5", "C6", "C7"].forEach(
+        (n, i) => {
+          const m = new THREE.Mesh(
+            new THREE.TorusGeometry(0.27, 0.09, 8, 14),
+            mats.bone.clone(),
+          );
+          m.rotation.x = Math.PI / 2;
+          m.position.set(0, -i * 0.26, 0);
+          localNamedMesh(
+            `vertebra-${i + 1}`,
+            n,
+            "bone",
+            ["neck", "spine"],
+            m,
+            neckRig,
+            V(0, 8.8 - i * 0.26, 0),
+          );
+          if (i < 6) {
+            const d = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.22, 0.22, 0.055, 14),
+              mats.disc.clone(),
+            );
+            d.position.set(0, -i * 0.26 - 0.13, 0);
+            neckRig.add(d);
+          }
+        },
+      );
+      marker(
+        "occiput-c1",
+        "Occiput–C1",
+        ["neck", "head"],
+        V(0, 9.06, 0),
+        layers.joints,
+        jointData("occiput", null, "neck"),
+      );
+      marker(
+        "c1-c2",
+        "C1–C2",
+        ["neck"],
+        V(0, 8.81, 0),
+        layers.joints,
+        jointData("axis", null, "neck"),
+      );
+      const spineRig = new THREE.Group();
+      spineRig.position.set(0, 7.05, 0);
+      layers.bones.add(spineRig);
+      motionRigs.set("spine", spineRig);
+      const vertebra = [];
+      for (let i = 0; i < 17; i++) {
+        const y = -i * 0.27;
+        const radius = i < 12 ? 0.33 : 0.4;
+        const m = new THREE.Mesh(
+          new THREE.TorusGeometry(radius, 0.105, 8, 16),
+          mats.bone.clone(),
+        );
+        m.rotation.x = Math.PI / 2;
+        m.position.set(0, y, 0);
+        localNamedMesh(
+          `spine-v-${i + 1}`,
+          i < 12 ? `Thoracic vertebra T${i + 1}` : `Lumbar vertebra L${i - 11}`,
+          "bone",
+          ["spine"],
+          m,
+          spineRig,
+          V(0, 7.05 + y, 0),
+        );
+        vertebra.push(m);
+        if (i < 16) {
+          const d = new THREE.Mesh(
+            new THREE.CylinderGeometry(radius * 0.82, radius * 0.82, 0.055, 14),
+            mats.disc.clone(),
+          );
+          d.position.set(0, y - 0.135, 0);
+          layers.discs.add(d);
+        }
+      }
+      const sacrum = blob(
+        "sacrum",
+        "Sacrum",
+        "bone",
+        ["spine", "pelvis"],
+        V(0, 2.35, 0.03),
+        [0.58, 0.75, 0.32],
+      );
+      const coccyx = bone(
+        "coccyx",
+        "Coccyx",
+        ["spine", "pelvis"],
+        V(0, 1.72, 0),
+        V(0, 1.35, 0.08),
+        0.13,
+      );
+      marker(
+        "spinal-discs",
+        "Intervertebral discs",
+        ["spine"],
+        V(0.43, 5.55, 0),
+        layers.joints,
+        jointData("disc", null, "spine"),
+      );
+      marker(
+        "facet-joints",
+        "Facet joints",
+        ["spine"],
+        V(-0.47, 5.45, 0),
+        layers.joints,
+        jointData("facet", null, "spine"),
+      );
+      bone(
+        "sternum",
+        "Sternum",
+        ["spine"],
+        V(0, 7.35, 0.23),
+        V(0, 5.05, 0.25),
+        0.2,
+      );
+      for (let i = 0; i < 12; i++) {
+        const y = 7.15 - i * 0.18;
+        ["left", "right"].forEach((side) => {
+          const s = side === "left" ? -1 : 1;
+          const curve = new THREE.Mesh(
+            new THREE.TorusGeometry(
+              1.15 + i * 0.025,
+              0.055,
+              8,
+              22,
+              Math.PI * 0.77,
+            ),
+            mats.bone.clone(),
+          );
+          curve.rotation.set(Math.PI / 2, 0, side === "left" ? Math.PI : 0);
+          curve.position.set(s * 0.06, y, -0.04);
+          const e = namedMesh(
+            `rib-${side}-${i + 1}`,
+            `${side === "left" ? "Left" : "Right"} rib ${i + 1}`,
+            "bone",
+            ["spine"],
+            curve,
+            layers.bones,
+            curve.position,
+          );
+          e.explode = curve.position.clone().normalize().multiplyScalar(0.55);
+        });
+      }
+      bone(
+        "clavicle-left",
+        "Left clavicle",
+        ["left-arm", "spine"],
+        V(-0.15, 7.72, 0.02),
+        V(-2.25, 7.64, 0.04),
+        0.11,
+      );
+      bone(
+        "clavicle-right",
+        "Right clavicle",
+        ["right-arm", "spine"],
+        V(0.15, 7.72, 0.02),
+        V(2.25, 7.64, 0.04),
+        0.11,
+      );
+      blob(
+        "scapula-left",
+        "Left scapula",
+        "bone",
+        ["left-arm", "spine"],
+        V(-2.22, 7.2, -0.22),
+        [0.55, 0.7, 0.12],
+      );
+      blob(
+        "scapula-right",
+        "Right scapula",
+        "bone",
+        ["right-arm", "spine"],
+        V(2.22, 7.2, -0.22),
+        [0.55, 0.7, 0.12],
+      );
+      blob(
+        "pelvis-left",
+        "Left hip bone",
+        "bone",
+        ["pelvis", "left-leg"],
+        V(-0.68, 2.75, 0),
+        [0.72, 0.7, 0.36],
+      );
+      blob(
+        "pelvis-right",
+        "Right hip bone",
+        "bone",
+        ["pelvis", "right-leg"],
+        V(0.68, 2.75, 0),
+        [0.72, 0.7, 0.36],
+      );
+      function arm(side) {
+        const s = side === "left" ? -1 : 1,
+          caps = side[0].toUpperCase() + side.slice(1),
+          armTag = `${side}-arm`,
+          handTag = `${side}-hand`;
+        const shoulder = new THREE.Group();
+        shoulder.position.set(s * 2.47, 7.45, 0);
+        layers.bones.add(shoulder);
+        const upper = new THREE.Group();
+        shoulder.add(upper);
+        motionRigs.set(`shoulder-${side}`, upper);
+        bone(
+          `${side}-humerus`,
+          `${caps} humerus`,
+          [armTag],
+          V(0, -0.1, 0),
+          V(0, -2.55, 0),
+          0.2,
+          upper,
+        );
+        marker(
+          `glenohumeral-${side}`,
+          `Glenohumeral (${side})`,
+          [armTag],
+          V(0, 0, 0),
+          shoulder,
+          jointData("shoulder", side, `shoulder-${side}`),
+        );
+        const elbow = new THREE.Group();
+        elbow.position.set(0, -2.72, 0);
+        upper.add(elbow);
+        motionRigs.set(`elbow-${side}`, elbow);
+        marker(
+          `humeroulnar-${side}`,
+          `Humeroulnar (${side})`,
+          [armTag],
+          V(0, 0, 0),
+          elbow,
+          jointData("elbow", side, `elbow-${side}`),
+        );
+        marker(
+          `radioulnar-${side}`,
+          `Radioulnar (${side})`,
+          [armTag],
+          V(0.12, 0.05, 0.05),
+          elbow,
+          jointData("radioulnar", side, `radioulnar-${side}`),
+        );
+        const fore = new THREE.Group();
+        elbow.add(fore);
+        motionRigs.set(`radioulnar-${side}`, fore);
+        bone(
+          `${side}-radius`,
+          `${caps} radius`,
+          [armTag],
+          V(s * 0.13, -0.12, 0.06),
+          V(s * 0.13, -2.43, 0.06),
+          0.135,
+          fore,
+        );
+        bone(
+          `${side}-ulna`,
+          `${caps} ulna`,
+          [armTag],
+          V(-s * 0.13, -0.12, -0.05),
+          V(-s * 0.13, -2.43, -0.05),
+          0.14,
+          fore,
+        );
+        const wrist = new THREE.Group();
+        wrist.position.set(0, -2.55, 0);
+        fore.add(wrist);
+        motionRigs.set(`wrist-${side}`, wrist);
+        marker(
+          `radiocarpal-${side}`,
+          `Radiocarpal (${side})`,
+          [armTag, handTag],
+          V(0, 0, 0),
+          wrist,
+          jointData("wrist", side, `wrist-${side}`),
+        );
+        createHand(side, wrist, armTag, handTag);
+      }
+      function createHand(side, parent, armTag, handTag) {
+        const s = side === "left" ? -1 : 1,
+          caps = side[0].toUpperCase() + side.slice(1);
+        const hand = new THREE.Group();
+        parent.add(hand);
+        motionRigs.set(`hand-${side}`, hand);
+        const tags = [armTag, handTag];
+        const carpalNames = [
+          "Scaphoid",
+          "Lunate",
+          "Triquetrum",
+          "Pisiform",
+          "Trapezium",
+          "Trapezoid",
+          "Capitate",
+          "Hamate",
+        ];
+        for (let i = 0; i < 8; i++) {
+          const x = ((i % 4) - 0.5 * 3) * 0.19,
+            y = Math.floor(i / 4) * -0.2 - 0.14;
+          blob(
+            `${side}-carpal-${i + 1}`,
+            `${caps} ${carpalNames[i]}`,
+            "bone",
+            tags,
+            V(x, y, 0),
+            [0.13, 0.1, 0.12],
+            layers.bones,
+          );
+          const b = items.get(`${side}-carpal-${i + 1}`);
+          b.object.removeFromParent();
+          hand.add(b.object);
+          b.home = b.object.position.clone();
+        }
+        marker(
+          `intercarpal-${side}`,
+          `Intercarpal (${side})`,
+          tags,
+          V(0, -0.24, 0.02),
+          hand,
+          jointData("intercarpal", side, `hand-${side}`),
+        );
+        const fingers = [
+          ["index", -0.42, 0.23, 0.64, 0.48, 0.36],
+          ["middle", -0.14, 0.24, 0.72, 0.54, 0.39],
+          ["ring", 0.16, 0.23, 0.67, 0.5, 0.36],
+          ["little", 0.43, 0.18, 0.52, 0.39, 0.3],
+        ];
+        fingers.forEach(([f, x, r, l1, l2, l3], index) => {
+          bone(
+            `${side}-${f}-metacarpal`,
+            `${caps} ${f} metacarpal`,
+            tags,
+            V(x, -0.2, 0),
+            V(x, -0.88, 0),
+            r,
+            hand,
+          );
+          const mcp = new THREE.Group();
+          mcp.position.set(x, -0.96, 0);
+          hand.add(mcp);
+          motionRigs.set(`mcp-${side}-${f}`, mcp);
+          const ftags = [...tags, `${side}-${f}`];
+          marker(
+            `${side}-${f}-mcp`,
+            `${f[0].toUpperCase() + f.slice(1)} MCP (${side})`,
+            ftags,
+            V(0, 0, 0),
+            mcp,
+            jointData("mcp", side, `mcp-${side}-${f}`),
+          );
+          bone(
+            `${side}-${f}-proximal`,
+            `${caps} ${f} proximal phalanx`,
+            ftags,
+            V(0, -0.06, 0),
+            V(0, -l1, 0),
+            r * 0.72,
+            mcp,
+          );
+          const pip = new THREE.Group();
+          pip.position.set(0, -l1 - 0.06, 0);
+          mcp.add(pip);
+          motionRigs.set(`pip-${side}-${f}`, pip);
+          marker(
+            `${side}-${f}-pip`,
+            `${f[0].toUpperCase() + f.slice(1)} PIP (${side})`,
+            ftags,
+            V(0, 0, 0),
+            pip,
+            jointData("pip", side, `pip-${side}-${f}`),
+          );
+          bone(
+            `${side}-${f}-middle`,
+            `${caps} ${f} middle phalanx`,
+            ftags,
+            V(0, -0.04, 0),
+            V(0, -l2, 0),
+            r * 0.64,
+            pip,
+          );
+          const dip = new THREE.Group();
+          dip.position.set(0, -l2 - 0.07, 0);
+          pip.add(dip);
+          motionRigs.set(`dip-${side}-${f}`, dip);
+          marker(
+            `${side}-${f}-dip`,
+            `${f[0].toUpperCase() + f.slice(1)} DIP (${side})`,
+            ftags,
+            V(0, 0, 0),
+            dip,
+            jointData("dip", side, `dip-${side}-${f}`),
+          );
+          bone(
+            `${side}-${f}-distal`,
+            `${caps} ${f} distal phalanx`,
+            ftags,
+            V(0, -0.04, 0),
+            V(0, -l3, 0),
+            r * 0.56,
+            dip,
+          );
+          marker(
+            `${side}-${f}-cmc`,
+            `${f[0].toUpperCase() + f.slice(1)} CMC (${side})`,
+            ftags,
+            V(x, -0.18, 0.04),
+            hand,
+            jointData("fingercmc", side, `hand-${side}`),
+          );
+        });
+        const tx = s * 0.69;
+        bone(
+          `${side}-thumb-metacarpal`,
+          `${caps} thumb metacarpal`,
+          tags,
+          V(tx, -0.26, 0),
+          V(tx + s * 0.42, -0.74, 0),
+          0.17,
+          hand,
+        );
+        const thumb = new THREE.Group();
+        thumb.position.set(tx + s * 0.45, -0.77, 0);
+        hand.add(thumb);
+        motionRigs.set(`thumbcmc-${side}`, thumb);
+        marker(
+          `thumb-cmc-${side}`,
+          `Thumb CMC (${side})`,
+          tags,
+          V(-s * 0.45, 0.5, 0),
+          thumb,
+          jointData("thumbcmc", side, `thumbcmc-${side}`),
+        );
+        marker(
+          `thumb-mcp-${side}`,
+          `Thumb MCP (${side})`,
+          tags,
+          V(0, 0, 0),
+          thumb,
+          jointData("mcp", side, `thumbcmc-${side}`),
+        );
+        bone(
+          `${side}-thumb-proximal`,
+          `${caps} thumb proximal phalanx`,
+          tags,
+          V(0, -0.04, 0),
+          V(s * 0.26, -0.45, 0),
+          0.125,
+          thumb,
+        );
+        const ip = new THREE.Group();
+        ip.position.set(s * 0.29, -0.49, 0);
+        thumb.add(ip);
+        motionRigs.set(`thumbip-${side}`, ip);
+        marker(
+          `thumb-ip-${side}`,
+          `Thumb IP (${side})`,
+          tags,
+          V(0, 0, 0),
+          ip,
+          jointData("thumbip", side, `thumbip-${side}`),
+        );
+        bone(
+          `${side}-thumb-distal`,
+          `${caps} thumb distal phalanx`,
+          tags,
+          V(0, -0.03, 0),
+          V(s * 0.22, -0.34, 0),
+          0.105,
+          ip,
+        );
+      }
+      arm("left");
+      arm("right");
+      function leg(side) {
+        const s = side === "left" ? -1 : 1,
+          caps = side[0].toUpperCase() + side.slice(1),
+          legTag = `${side}-leg`,
+          footTag = `${side}-foot`;
+        const hip = new THREE.Group();
+        hip.position.set(s * 1.02, 2.65, 0);
+        layers.bones.add(hip);
+        const thigh = new THREE.Group();
+        hip.add(thigh);
+        motionRigs.set(`hip-${side}`, thigh);
+        marker(
+          `hip-${side}`,
+          `Hip (${side})`,
+          [legTag, "pelvis"],
+          V(0, 0, 0),
+          hip,
+          jointData("hip", side, `hip-${side}`),
+        );
+        bone(
+          `${side}-femur`,
+          `${caps} femur`,
+          [legTag],
+          V(0, -0.12, 0),
+          V(0, -3.05, 0),
+          0.25,
+          thigh,
+        );
+        const knee = new THREE.Group();
+        knee.position.set(0, -3.25, 0);
+        thigh.add(knee);
+        motionRigs.set(`knee-${side}`, knee);
+        marker(
+          `knee-${side}`,
+          `Knee (${side})`,
+          [legTag],
+          V(0, 0, 0),
+          knee,
+          jointData("knee", side, `knee-${side}`),
+        );
+        const pat = blob(
+          `${side}-patella`,
+          `${caps} patella`,
+          "bone",
+          [legTag],
+          V(s * 0.18, 0.08, 0.25),
+          [0.26, 0.34, 0.1],
+        );
+        pat.object.removeFromParent();
+        knee.add(pat.object);
+        pat.home = pat.object.position.clone();
+        const men = new THREE.Mesh(
+          new THREE.TorusGeometry(0.25, 0.07, 8, 16, Math.PI),
+          mats.cartilage.clone(),
+        );
+        men.rotation.set(Math.PI / 2, 0, 0);
+        men.position.set(0, -0.02, 0.04);
+        const me = localNamedMesh(
+          `${side}-meniscus`,
+          `${caps} meniscus`,
+          "menisci",
+          [legTag],
+          men,
+          knee,
+          V(s * 1.02, -0.6, 0.04),
+        );
+        me.explode = V(s * 0.65, -0.1, 0);
+        const shin = new THREE.Group();
+        knee.add(shin);
+        bone(
+          `${side}-tibia`,
+          `${caps} tibia`,
+          [legTag],
+          V(-s * 0.1, -0.12, 0),
+          V(-s * 0.1, -2.86, 0),
+          0.21,
+          shin,
+        );
+        bone(
+          `${side}-fibula`,
+          `${caps} fibula`,
+          [legTag],
+          V(s * 0.23, -0.12, -0.04),
+          V(s * 0.22, -2.76, -0.05),
+          0.13,
+          shin,
+        );
+        softLine(
+          `${side}-acl`,
+          `${caps} anterior cruciate ligament`,
+          "ligament",
+          [legTag],
+          V(-0.14, -0.08, 0.12),
+          V(0.14, -0.52, -0.1),
+          0.045,
+          layers.ligaments,
+        );
+        const ankle = new THREE.Group();
+        ankle.position.set(0, -3.02, 0);
+        shin.add(ankle);
+        motionRigs.set(`ankle-${side}`, ankle);
+        marker(
+          `talocrural-${side}`,
+          `Talocrural (${side})`,
+          [legTag, footTag],
+          V(0, 0, 0),
+          ankle,
+          jointData("ankle", side, `ankle-${side}`),
+        );
+        marker(
+          `subtalar-${side}`,
+          `Subtalar (${side})`,
+          [legTag, footTag],
+          V(0, -0.25, 0.14),
+          ankle,
+          jointData("subtalar", side, `subtalar-${side}`),
+        );
+        createFoot(side, ankle, legTag, footTag);
+      }
+      function createFoot(side, parent, legTag, footTag) {
+        const s = side === "left" ? -1 : 1,
+          caps = side[0].toUpperCase() + side.slice(1),
+          tags = [legTag, footTag];
+        bone(
+          `${side}-talus`,
+          `${caps} talus`,
+          tags,
+          V(0, -0.15, 0.08),
+          V(0, -0.4, 0.16),
+          0.23,
+          parent,
+        );
+        bone(
+          `${side}-calcaneus`,
+          `${caps} calcaneus`,
+          tags,
+          V(0, -0.43, 0.08),
+          V(0, -0.65, 0.45),
+          0.25,
+          parent,
+        );
+        for (let i = 0; i < 5; i++) {
+          const x = (i - 2) * 0.18;
+          bone(
+            `${side}-metatarsal-${i + 1}`,
+            `${caps} metatarsal ${i + 1}`,
+            tags,
+            V(x, -0.58, 0.32),
+            V(x, -0.72, 0.95),
+            0.1,
+            parent,
+          );
+          const toe = new THREE.Group();
+          toe.position.set(x, -0.74, 0.98);
+          parent.add(toe);
+          ["proximal", "middle", "distal"].forEach((p, k) => {
+            if (i === 0 && k === 1) return;
+            const a = V(0, 0, k * 0.18),
+              b = V(0, -0.02, 0.19 + k * 0.18);
+            bone(
+              `${side}-toe-${i + 1}-${p}`,
+              `${caps} toe ${i + 1} ${p} phalanx`,
+              tags,
+              a,
+              b,
+              0.07,
+              toe,
+            );
+          });
+        }
+      }
+      leg("left");
+      leg("right");
+      // Full external body envelope. This optional layer follows the same limb rigs as the skeleton.
+      function addSkinBody() {
+        blob(
+          "skin-head",
+          "External skin — head",
+          "skin",
+          ["head"],
+          V(0, 10.22, 0.03),
+          [1.02, 1.14, 0.94],
+          layers.skin,
+        );
+        skinCapsule(
+          "skin-neck",
+          "External skin — neck",
+          ["neck"],
+          V(0, 9.4, 0),
+          V(0, 8.45, 0),
+          0.47,
+        );
+        blob(
+          "skin-torso",
+          "External skin — thorax",
+          "skin",
+          ["spine"],
+          V(0, 5.85, -0.02),
+          [2.18, 2.33, 0.98],
+          layers.skin,
+        );
+        blob(
+          "skin-abdomen",
+          "External skin — abdomen",
+          "skin",
+          ["spine", "pelvis"],
+          V(0, 3.55, -0.01),
+          [1.68, 1.3, 0.84],
+          layers.skin,
+        );
+        blob(
+          "skin-pelvis",
+          "External skin — pelvis",
+          "skin",
+          ["pelvis"],
+          V(0, 2.55, -0.01),
+          [1.78, 1.0, 0.86],
+          layers.skin,
+        );
+        ["left", "right"].forEach((side) => {
+          const s = side === "left" ? -1 : 1,
+            armTag = `${side}-arm`,
+            handTag = `${side}-hand`,
+            legTag = `${side}-leg`,
+            footTag = `${side}-foot`;
+          skinCapsule(
+            `skin-${side}-upper-arm`,
+            `External skin — ${side} upper arm`,
+            [armTag],
+            V(0, -0.06, 0),
+            V(0, -2.62, 0),
+            0.43,
+            motionRigs.get(`shoulder-${side}`),
+          );
+          skinCapsule(
+            `skin-${side}-forearm`,
+            `External skin — ${side} forearm`,
+            [armTag],
+            V(0, -0.08, 0),
+            V(0, -2.5, 0),
+            0.33,
+            motionRigs.get(`radioulnar-${side}`),
+          );
+          skinCapsule(
+            `skin-${side}-hand`,
+            `External skin — ${side} hand`,
+            [armTag, handTag],
+            V(0, -0.22, 0.01),
+            V(0, -1.28, 0.02),
+            0.5,
+            motionRigs.get(`hand-${side}`),
+          );
+          const fingers = [
+            ["index", 0.64, 0.49, 0.37],
+            ["middle", 0.72, 0.54, 0.4],
+            ["ring", 0.67, 0.5, 0.37],
+            ["little", 0.52, 0.39, 0.31],
+          ];
+          fingers.forEach(([finger, l1, l2, l3]) => {
+            skinCapsule(
+              `skin-${side}-${finger}-proximal`,
+              `External skin — ${side} ${finger} proximal finger`,
+              [armTag, handTag, `${side}-${finger}`],
+              V(0, -0.08, 0.01),
+              V(0, -l1, 0.01),
+              0.18,
+              motionRigs.get(`mcp-${side}-${finger}`),
+            );
+            skinCapsule(
+              `skin-${side}-${finger}-middle`,
+              `External skin — ${side} ${finger} middle finger`,
+              [armTag, handTag, `${side}-${finger}`],
+              V(0, -0.06, 0.01),
+              V(0, -l2, 0.01),
+              0.145,
+              motionRigs.get(`pip-${side}-${finger}`),
+            );
+            skinCapsule(
+              `skin-${side}-${finger}-distal`,
+              `External skin — ${side} ${finger} distal finger`,
+              [armTag, handTag, `${side}-${finger}`],
+              V(0, -0.05, 0.01),
+              V(0, -l3, 0.01),
+              0.12,
+              motionRigs.get(`dip-${side}-${finger}`),
+            );
+          });
+          skinCapsule(
+            `skin-${side}-thumb-proximal`,
+            `External skin — ${side} thumb proximal`,
+            [armTag, handTag],
+            V(0, -0.06, 0.01),
+            V(s * 0.29, -0.47, 0.01),
+            0.18,
+            motionRigs.get(`thumbcmc-${side}`),
+          );
+          skinCapsule(
+            `skin-${side}-thumb-distal`,
+            `External skin — ${side} thumb distal`,
+            [armTag, handTag],
+            V(0, -0.05, 0.01),
+            V(s * 0.23, -0.35, 0.01),
+            0.14,
+            motionRigs.get(`thumbip-${side}`),
+          );
+          skinCapsule(
+            `skin-${side}-thigh`,
+            `External skin — ${side} thigh`,
+            [legTag],
+            V(0, -0.08, 0),
+            V(0, -3.12, 0),
+            0.58,
+            motionRigs.get(`hip-${side}`),
+          );
+          skinCapsule(
+            `skin-${side}-lower-leg`,
+            `External skin — ${side} lower leg`,
+            [legTag],
+            V(0, -0.08, 0),
+            V(0, -2.94, 0.02),
+            0.44,
+            motionRigs.get(`knee-${side}`),
+          );
+          skinCapsule(
+            `skin-${side}-foot`,
+            `External skin — ${side} foot`,
+            [legTag, footTag],
+            V(0, -0.42, 0.05),
+            V(0, -0.68, 1.02),
+            0.42,
+            motionRigs.get(`ankle-${side}`),
+          );
+        });
+      }
+      addSkinBody();
+      // Soft tissue reference layers — optional and independently switchable.
+      blob(
+        "torso-muscles",
+        "Thoracic muscle envelope",
+        "muscle",
+        ["spine"],
+        V(0, 5.5, -0.12),
+        [1.85, 2.45, 0.62],
+        layers.muscles,
+      );
+      ["left", "right"].forEach((side) => {
+        const s = side === "left" ? -1 : 1;
+        softLine(
+          `${side}-biceps`,
+          `${side} biceps`,
+          "muscle",
+          [`${side}-arm`],
+          V(s * 2.42, 6.9, 0.17),
+          V(s * 2.42, 5.05, 0.17),
+          0.26,
+          layers.muscles,
+        );
+        softLine(
+          `${side}-quad`,
+          `${side} quadriceps`,
+          "muscle",
+          [`${side}-leg`],
+          V(s * 1.02, 2.1, 0.18),
+          V(s * 1.02, -0.3, 0.18),
+          0.34,
+          layers.muscles,
+        );
+      });
+      // Create a persistent relation-line group for exploded view.
+      const linkLines = new THREE.Group();
+      scene.add(linkLines);
+      linkLines.visible = false;
+      function buildLinks() {
+        linkLines.clear();
+        const geo = new THREE.BufferGeometry();
+        const arr = [];
+        for (const e of allObjects) {
+          if (e.kind === "bone" || e.kind === "joint") {
+            const p = e.object.getWorldPosition(new THREE.Vector3());
+            const q = p.clone().add(e.explode || V());
+            arr.push(p.x, p.y, p.z, q.x, q.y, q.z);
+          }
+        }
+        geo.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+        linkLines.add(
+          new THREE.LineSegments(
+            geo,
+            new THREE.LineBasicMaterial({
+              color: 0x4bc1c4,
+              transparent: true,
+              opacity: 0.22,
+            }),
+          ),
+        );
+      }
+      buildLinks();
+      function selectionMembers(sel = selected) {
+        if (!sel) return [];
+        if (sel.kind === "region") {
+          if (sel.id === "whole-body") return allObjects;
+          return allObjects.filter((e) =>
+            sel.tags.some((t) => e.tags.includes(t)),
+          );
+        }
+        return [sel];
+      }
+      function setMaterialHighlight(e, on) {
+        e.object.traverse((n) => {
+          if (!n.isMesh) return;
+          if (!n.userData.originalMaterial) {
+            n.userData.originalMaterial = n.material;
+            n.userData.originalColor = n.material.color?.clone?.();
+            n.userData.originalEmissive = n.material.emissive?.clone?.();
+          }
+          if (on) {
+            if (n.material.color) n.material.color.set(C.select);
+            if (n.material.emissive) {
+              n.material.emissive.set(0x167d78);
+              n.material.emissiveIntensity = 0.6;
+            }
+          } else {
+            if (n.material.color && n.userData.originalColor)
+              n.material.color.copy(n.userData.originalColor);
+            if (n.material.emissive && n.userData.originalEmissive) {
+              n.material.emissive.copy(n.userData.originalEmissive);
+              n.material.emissiveIntensity = 0.2;
+            }
+          }
+        });
+      }
+      function clearHighlight() {
+        lastSelection.forEach((e) => setMaterialHighlight(e, false));
+        lastSelection = [];
+      }
+      function select(entry, focus = true) {
+        if (!entry) return;
+        clearHighlight();
+        selected = entry;
+        const mem = entry.id === "whole-body" ? [] : selectionMembers();
+        mem.forEach((e) => setMaterialHighlight(e, true));
+        lastSelection = mem;
+        document
+          .querySelectorAll("#tree button")
+          .forEach((b) =>
+            b.classList.toggle(
+              "active",
+              b.dataset.id === entry.id || b.dataset.region === entry.id,
+            ),
+          );
+        renderInfo();
+        if (focus) focusEntry(entry);
+      }
+      function selectById(id, focus = true) {
+        select(items.get(id) || regionMap.get(id), focus);
+      }
+      function focusEntry(e) {
+        const p =
+          e.kind === "region"
+            ? e.center
+            : e.object.getWorldPosition(new THREE.Vector3());
+        const distance = e.kind === "region" ? 8 : 4;
+        const direction = camera.position
+          .clone()
+          .sub(controls.target)
+          .normalize();
+        const next = p.clone().add(direction.multiplyScalar(distance));
+        animateCamera(next, p, 520);
+      }
+      function animateCamera(pos, target, duration = 550) {
+        const a = camera.position.clone(),
+          t = controls.target.clone(),
+          start = performance.now();
+        function tick(now) {
+          const k = Math.min(1, (now - start) / duration),
+            q = 1 - Math.pow(1 - k, 3);
+          camera.position.lerpVectors(a, pos, q);
+          controls.target.lerpVectors(t, target, q);
+          if (k < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+      function renderInfo() {
+        const el = document.getElementById("infoContent");
+        if (!selected) {
+          el.innerHTML =
+            '<div class="selection-head"><div class="kindline">Interactive 3D model</div><h2>Select a structure</h2><p>Choose a region in the body navigator or click a bone, joint, cartilage, ligament, or soft-tissue structure in the viewport.</p></div>' +
+            layersUI();
+          return;
+        }
+        if (selected.kind === "region") {
+          const n = selectionMembers().filter((x) => !x.hidden).length;
+          el.innerHTML = `<div class="selection-head"><div class="kindline">Region · ${n} visible components</div><h2>${selected.name}</h2><p>${selected.description}</p></div><div class="info-grid"><div class="field"><span>Selection scope</span><b>${n} independently identified anatomical components</b></div><div class="field"><span>Available actions</span><b>Focus, isolate, remove, detach, restore and explode</b></div></div>${actionsUI()}${layersUI()}`;
+          return;
+        }
+        const d = selected;
+        const hasROM = !!d.range;
+        el.innerHTML = `<div class="selection-head"><div class="kindline">${d.kind} · ID ${d.id}</div><h2>${d.name}</h2><p>${d.kind === "joint" ? "Joint-by-joint anatomical inspection and constrained range-of-motion control." : `Independent ${d.kind} object. Its selection, visibility and transform are separate from all other components.`}</p></div>${d.type ? `<div class="info-grid"><div class="field"><span>Joint classification</span><b>${d.type}</b></div><div class="field"><span>Connected bones</span><b>${d.bones}</b></div><div class="field"><span>Primary movement</span><b>${d.moves}</b></div><div class="field"><span>Function</span><b>${d.function}</b></div><div class="field"><span>Mobility</span><b>${d.mobility}</b></div><div class="field"><span>Stability</span><b>${d.stability}</b></div></div>` : `<div class="info-grid"><div class="field"><span>Region membership</span><b>${d.tags.join(" · ")}</b></div><div class="field"><span>Object state</span><b>${d.hidden ? "Hidden" : d.detached ? "Detached" : "Attached and visible"}</b></div></div>`}${hasROM ? `<div class="rom"><div class="rom-head"><strong>Range of motion — ${d.axis}</strong><output id="romValue">${d.range[0]}°</output></div><input id="romRange" type="range" min="${d.range[0]}" max="${d.range[1]}" value="${d.value ?? 0}" step="1" aria-label="${d.axis} range of motion"/><p class="rom-hint">Motion is constrained to the report’s joint type and an anatomically plausible range. Drag the control to demonstrate movement.</p></div>` : ""}${actionsUI()}${layersUI()}`;
+        const range = document.getElementById("romRange");
+        if (range)
+          range.addEventListener("input", () => applyROM(+range.value));
+      }
+      function actionsUI() {
+        return '<div class="part-actions"><button class="btn primary" id="infoIsolate" type="button">Isolate</button><button class="btn danger" id="infoRemove" type="button">Remove</button><button class="btn" id="infoDetach" type="button">Detach</button><button class="btn" id="infoRestore" type="button">Restore / reset</button></div><p class="action-note">Remove is non-destructive: every hidden or detached item can be restored. A parent region carries its child components while preserving their individual IDs.</p>';
+      }
+      function layersUI() {
+        return `<div class="layer-title">Visibility layers</div><div class="layers">${[
+          ["whole", "Whole skeleton"],
+          ["bones", "Individual bones"],
+          ["joints", "Joints"],
+          ["cartilage", "Cartilage"],
+          ["discs", "Intervertebral discs"],
+          ["menisci", "Menisci"],
+          ["ligaments", "Ligaments"],
+          ["muscles", "Muscles"],
+          ["skin", "Skin / external body"],
+          ["labels", "Labels"],
+        ]
+          .map(
+            ([id, n]) =>
+              `<label class="check"><input type="checkbox" data-layer="${id}" checked />${n}</label>`,
+          )
+          .join(
+            "",
+          )}</div><div class="legend"><span class="dot bone"></span>bone &nbsp; <span class="dot joint"></span>joint &nbsp; <span class="dot soft"></span>soft tissue &nbsp; <span class="dot selected"></span>selected</div>`;
+      }
+      function setLabels(on) {
+        layers.labels.visible = on;
+        labelSprites.forEach((s) => (s.visible = on));
+        document.getElementById("labelsBtn").classList.toggle("active", on);
+      }
+      function bindInfo() {
+        document.getElementById("infoContent").onclick = (e) => {
+          const id = e.target.id;
+          if (id === "infoIsolate") isolateSelected();
+          if (id === "infoRemove") removeSelected();
+          if (id === "infoDetach") detachSelected();
+          if (id === "infoRestore") restoreSelected();
+        };
+        document.querySelectorAll("[data-layer]").forEach((input) =>
+          input.addEventListener("change", () => {
+            const id = input.dataset.layer;
+            if (id === "whole") {
+              bodyRoot.visible = input.checked;
+            } else if (id === "labels") {
+              setLabels(input.checked);
+            } else {
+              layers[id].visible = input.checked;
+            }
+          }),
+        );
+      }
+      const originalRenderInfo = renderInfo;
+      renderInfo = function () {
+        originalRenderInfo();
+        bindInfo();
+      };
+      function applyROM(value) {
+        if (!selected?.range) return;
+        selected.value = value;
+        document.getElementById("romValue").textContent = `${value}°`;
+        const rig = motionRigs.get(selected.rig);
+        if (!rig) return;
+        const rad = THREE.MathUtils.degToRad(value);
+        const id = selected.id;
+        if (/radioulnar/.test(id)) rig.rotation.y = rad;
+        else if (/subtalar/.test(id)) rig.rotation.z = rad;
+        else if (/shoulder|hip/.test(id)) rig.rotation.z = rad;
+        else if (/occiput|c1-c2|facet/.test(id)) rig.rotation.y = rad;
+        else if (/tmj/.test(id)) rig.rotation.x = rad * 0.45;
+        else rig.rotation.z = rad;
+      }
+      function refreshVisibility() {
+        const allowed = isolated ? new Set(selectionMembers(isolated)) : null;
+        allObjects.forEach((e) => {
+          const visible = !e.hidden && (!allowed || allowed.has(e));
+          e.object.visible = visible;
+        });
+        setLabels(
+          document.querySelector('[data-layer="labels"]')?.checked ?? true,
+        );
+      }
+      function isolateSelected() {
+        if (!selected) return toast("Select a structure to isolate.");
+        isolated = selected;
+        refreshVisibility();
+        toast(`${selected.name} isolated`);
+      }
+      function removeSelected() {
+        if (!selected) return toast("Select a structure to remove.");
+        selectionMembers().forEach((e) => (e.hidden = true));
+        refreshVisibility();
+        toast(`${selected.name} removed — use Restore to bring it back.`);
+        renderInfo();
+      }
+      function detachSelected() {
+        if (!selected) return toast("Select a structure to detach.");
+        const members = selectionMembers();
+        members.forEach((e, i) => {
+          e.detached = true;
+          e.detachTarget = (e.explode || V(0.5, 0, 0))
+            .clone()
+            .multiplyScalar(3.8)
+            .add(V((i % 4) * 0.08, 0, 0));
+        });
+        toast(`${selected.name} detached for inspection`);
+        renderInfo();
+      }
+      function restoreSelected() {
+        if (!selected) {
+          return restoreAll();
+        }
+        selectionMembers().forEach((e) => {
+          e.hidden = false;
+          e.detached = false;
+          e.detachTarget = V();
+          if (e.range) {
+            e.value = 0;
+            const rig = motionRigs.get(e.rig);
+            if (rig) rig.rotation.set(0, 0, 0);
+          }
+        });
+        isolated = null;
+        refreshVisibility();
+        toast(`${selected.name} restored`);
+        renderInfo();
+      }
+      function restoreAll() {
+        allObjects.forEach((e) => {
+          e.hidden = false;
+          e.detached = false;
+          e.detachTarget = V();
+          if (e.range) e.value = 0;
+        });
+        motionRigs.forEach((r) => r.rotation.set(0, 0, 0));
+        isolated = null;
+        exploded = false;
+        linkLines.visible = false;
+        refreshVisibility();
+        toast("Full anatomical system restored");
+      }
+      function toggleExplode(on = !exploded) {
+        exploded = on;
+        linkLines.visible = on;
+        document.getElementById("explode").classList.toggle("active", on);
+        toast(on ? "Exploded relationship view active" : "Model reassembled");
+      }
+      function toast(text) {
+        const t = document.getElementById("toast");
+        t.textContent = text;
+        t.classList.add("show");
+        clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => t.classList.remove("show"), 2200);
+      }
+      document.getElementById("tree").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        selectById(b.dataset.id || b.dataset.region);
+      });
+      document.getElementById("search").addEventListener("input", (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        if (!q) return;
+        const found = [...items.values(), ...regionMap.values()].find(
+          (v) => v.name.toLowerCase().includes(q) || v.id.includes(q),
+        );
+        if (found) select(found, false);
+      });
+      document.getElementById("search").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const q = e.target.value.trim().toLowerCase();
+          const found = [...items.values(), ...regionMap.values()].find(
+            (v) => v.name.toLowerCase().includes(q) || v.id.includes(q),
+          );
+          if (found) select(found);
+        }
+      });
+      document.getElementById("explode").onclick = () => toggleExplode(true);
+      document.getElementById("reassemble").onclick = () =>
+        toggleExplode(false);
+      document.getElementById("isolate").onclick = isolateSelected;
+      document.getElementById("remove").onclick = removeSelected;
+      document.getElementById("detach").onclick = detachSelected;
+      document.getElementById("restore").onclick = restoreSelected;
+      document.getElementById("fullbody").onclick = () =>
+        selectById("whole-body");
+      document.getElementById("resetcam").onclick = () => {
+        animateCamera(V(13, 7.4, 24), V(0, 3.2, 0));
+      };
+      document.getElementById("labelsBtn").onclick = () => {
+        const input = document.querySelector('[data-layer="labels"]');
+        input.checked = !input.checked;
+        setLabels(input.checked);
+      };
+      document.getElementById("xrayBtn").onclick = () => {
+        xray = !xray;
+        document.getElementById("xrayBtn").classList.toggle("active", xray);
+        allObjects.forEach((e) =>
+          e.object.traverse((n) => {
+            if (n.isMesh && n.material) {
+              if (n.userData.originalTransparent === undefined) {
+                n.userData.originalTransparent = n.material.transparent;
+                n.userData.originalOpacity = n.material.opacity;
+              }
+              n.material.transparent = xray || n.userData.originalTransparent;
+              n.material.opacity = xray ? 0.35 : n.userData.originalOpacity;
+              n.material.depthWrite = !xray;
+            }
+          }),
+        );
+        toast(
+          xray
+            ? "X-ray material mode enabled"
+            : "Standard material mode restored",
+        );
+      };
+      document.getElementById("screenshot").onclick = () => {
+        renderer.render(scene, camera);
+        const a = document.createElement("a");
+        a.download = `anatomy-joint-lab-${Date.now()}.png`;
+        a.href = renderer.domElement.toDataURL("image/png");
+        a.click();
+        toast("Viewport exported as PNG");
+      };
+      const presets = {
+        front: [V(0, 3.3, 25), V(0, 3.3, 0)],
+        back: [V(0, 3.3, -25), V(0, 3.3, 0)],
+        left: [V(-25, 3.3, 0), V(0, 3.3, 0)],
+        right: [V(25, 3.3, 0), V(0, 3.3, 0)],
+      };
+      document.querySelectorAll("[data-view]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const [p, t] = presets[b.dataset.view];
+            animateCamera(p, t);
+          }),
+      );
+      const ray = new THREE.Raycaster(),
+        pointer = new THREE.Vector2(),
+        hoverCard = document.getElementById("hoverCard");
+      function targetFromEvent(e) {
+        const r = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+        pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+        ray.setFromCamera(pointer, camera);
+        const hit = ray
+          .intersectObjects(bodyRoot.children, true)
+          .find((h) => h.object.userData.anatomy);
+        return hit?.object.userData.anatomy;
+      }
+      renderer.domElement.addEventListener("click", (e) => {
+        const hit = targetFromEvent(e);
+        if (hit) select(hit);
+      });
+      renderer.domElement.addEventListener("pointermove", (e) => {
+        const hit = targetFromEvent(e);
+        if (hit) {
+          hoverCard.textContent = hit.name;
+          hoverCard.style.display = "block";
+          hoverCard.style.left = `${e.offsetX + 15}px`;
+          hoverCard.style.top = `${e.offsetY + 15}px`;
+          renderer.domElement.style.cursor = "pointer";
+        } else {
+          hoverCard.style.display = "none";
+          renderer.domElement.style.cursor = "grab";
+        }
+      });
+      const clock = new THREE.Clock();
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = clock.getDelta();
+        allObjects.forEach((e) => {
+          const base = e.home || V();
+          let target = base.clone();
+          if (exploded) target.add(e.explode || V());
+          if (e.detached) target.add(e.detachTarget || V());
+          e.object.position.lerp(target, Math.min(1, dt * 5));
+        });
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+      new ResizeObserver(() => {
+        const w = wrap.clientWidth,
+          h = wrap.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }).observe(wrap);
+      selectById("whole-body", false);
+      toast("Select any structure to begin inspection");
+    </script>
+  </body>
+  <div
+    id="codex-browser-sidebar-comments-root"
+    style="
+      position: fixed;
+      inset: 0px;
+      pointer-events: none;
+      z-index: 2147483647;
+    "
+  ></div>
+</html>
